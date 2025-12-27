@@ -1,0 +1,2721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="水力発電の計測・監視・制御の学習ノート。水位計測、SoC、FMCW、FFT、Rapidusなどの技術を詳しく解説。">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <title>水力発電の計測・監視・制御の学習ノート</title>
+    <style>
+        :root {
+            --primary-blue: #004085;
+            --accent-blue: #007bff;
+            --accent-cyan: #00c3ff;
+            --bg-light: #f0f7ff;
+            --white: #ffffff;
+            --text-main: #333;
+            --text-secondary: #444;
+            --border-light: #e0e7ff;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --transition-base: 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            line-height: 1.8;
+            color: var(--text-main);
+            margin: 0;
+            padding: 130px 15px 40px;
+            background-color: var(--bg-light);
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        /* ヘッダー・ナビゲーション */
+        h1 {
+            color: var(--primary-blue);
+            border-bottom: 4px solid var(--accent-blue);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: clamp(1.2em, 4vw, 1.4em);
+        }
+
+        h2 {
+            color: var(--white);
+            background: var(--primary-blue);
+            margin-top: 40px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: clamp(1em, 3vw, 1.2em);
+            border-left: 8px solid var(--accent-cyan);
+            scroll-margin-top: 100px;
+        }
+
+        h3 {
+            color: var(--primary-blue);
+            margin-top: 25px;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 5px;
+            font-size: clamp(0.95em, 2.5vw, 1.1em);
+        }
+
+        /* カードデザイン */
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            transition: transform var(--transition-base), box-shadow var(--transition-base);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+
+        .card-title {
+            font-weight: bold;
+            color: var(--accent-blue);
+            display: block;
+            margin-bottom: 10px;
+            font-size: clamp(0.95em, 2.5vw, 1.05em);
+            border-left: 4px solid var(--accent-blue);
+            padding-left: 10px;
+        }
+
+        .card-detail {
+            font-size: clamp(0.85em, 2vw, 0.95em);
+            color: var(--text-secondary);
+        }
+        
+        /* アコーディオン */
+        details {
+            background-color: var(--white);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        summary {
+            font-weight: bold;
+            padding: 18px;
+            cursor: pointer;
+            color: #1a1a1a;
+            list-style: none;
+            position: relative;
+            font-size: clamp(0.95em, 2.5vw, 1.1em);
+            background: #f8fbff;
+            border-bottom: 1px solid #eee;
+            user-select: none;
+            transition: background-color var(--transition-base);
+        }
+
+        summary:hover {
+            background: #f0f7ff;
+        }
+
+        summary:focus {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: -2px;
+        }
+
+        summary::after {
+            content: '▼';
+            position: absolute;
+            right: 18px;
+            color: var(--accent-blue);
+            transition: transform var(--transition-base);
+        }
+
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        .content {
+            padding: 20px;
+        }
+        
+        /* 数式・強調 */
+        .math-block {
+            background: #2c3e50;
+            padding: 25px 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            color: #ecf0f1;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(1em, 3vw, 1.2em);
+            border-left: 10px solid var(--accent-blue);
+            overflow-x: auto;
+        }
+
+        .note {
+            background-color: #eef9ff;
+            border-left: 6px solid var(--accent-blue);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: clamp(0.85em, 2vw, 0.95em);
+        }
+
+        .warning {
+            background-color: #fffaf0;
+            border-left: 6px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: clamp(0.85em, 2vw, 0.95em);
+        }
+
+        /* 流れるティッカー */
+        .ticker-container {
+            width: 100%;
+            overflow: hidden;
+            background-color: var(--primary-blue);
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 990;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            border-bottom: 3px solid var(--accent-blue);
+        }
+
+        .ticker-wrap {
+            white-space: nowrap;
+            animation: ticker 45s linear infinite;
+            will-change: transform;
+        }
+
+        .ticker-item {
+            display: inline-block;
+            margin-right: 60px;
+            font-weight: bold;
+            font-size: clamp(0.75em, 2vw, 0.85em);
+        }
+
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+
+        /* ポップアップウィンドウ */
+        .popup-menu {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1002;
+            background-color: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 90vw;
+            max-height: 80vh;
+            width: 500px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity var(--transition-base), transform var(--transition-base);
+        }
+
+        .popup-menu.open {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .popup-menu .popup-header {
+            background: var(--primary-blue);
+            color: var(--white);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--accent-blue);
+        }
+
+        .popup-menu .popup-header h3 {
+            margin: 0;
+            font-size: clamp(1em, 2.5vw, 1.2em);
+            color: var(--white);
+            border: none;
+            padding: 0;
+        }
+
+        .popup-menu .close-btn {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 2em;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color var(--transition-base), transform var(--transition-base);
+        }
+
+        .popup-menu .close-btn:hover,
+        .popup-menu .close-btn:focus {
+            background-color: rgba(255,255,255,0.2);
+            transform: rotate(90deg);
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
+        }
+
+        .popup-menu .popup-content {
+            padding: 20px;
+            max-height: calc(80vh - 80px);
+            overflow-y: auto;
+        }
+
+        .popup-menu .popup-content a {
+            display: block;
+            padding: 15px 20px;
+            text-decoration: none;
+            font-size: clamp(0.9em, 2.5vw, 1em);
+            color: var(--text-main);
+            border-bottom: 1px solid #e0e7ff;
+            transition: background-color var(--transition-base), color var(--transition-base), padding-left var(--transition-base);
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .popup-menu .popup-content a:hover,
+        .popup-menu .popup-content a:focus {
+            background-color: var(--bg-light);
+            color: var(--accent-blue);
+            padding-left: 30px;
+            outline: none;
+        }
+
+        .popup-menu .popup-content a:last-child {
+            border-bottom: none;
+        }
+
+        /* ポップアップメニュー内のアコーディオン */
+        .popup-menu .popup-content details {
+            background-color: transparent;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: none;
+            border: 1px solid #e0e7ff;
+        }
+
+        .popup-menu .popup-content details summary {
+            font-weight: bold;
+            padding: 12px 18px;
+            cursor: pointer;
+            color: var(--primary-blue);
+            list-style: none;
+            position: relative;
+            font-size: clamp(0.9em, 2.5vw, 1em);
+            background: #f8fbff;
+            border-bottom: 1px solid #e0e7ff;
+            user-select: none;
+            transition: background-color var(--transition-base);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .popup-menu .popup-content details summary:hover {
+            background: #f0f7ff;
+        }
+
+        .popup-menu .popup-content details summary::after {
+            content: '▼';
+            position: absolute;
+            right: 18px;
+            color: var(--accent-blue);
+            transition: transform var(--transition-base);
+            font-size: 0.8em;
+        }
+
+        .popup-menu .popup-content details[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        .popup-menu .popup-content details .menu-section-content {
+            padding: 10px 0;
+        }
+
+        .popup-menu .popup-content details .menu-section-content a {
+            display: block;
+            padding: 10px 20px 10px 35px;
+            text-decoration: none;
+            font-size: clamp(0.85em, 2.5vw, 0.95em);
+            color: var(--text-secondary);
+            border-bottom: 1px solid #f0f7ff;
+            transition: background-color var(--transition-base), color var(--transition-base), padding-left var(--transition-base);
+            border-radius: 0;
+            margin-bottom: 0;
+        }
+
+        .popup-menu .popup-content details .menu-section-content a:hover,
+        .popup-menu .popup-content details .menu-section-content a:focus {
+            background-color: var(--bg-light);
+            color: var(--accent-blue);
+            padding-left: 40px;
+            outline: none;
+        }
+
+        .popup-menu .popup-content details .menu-section-content a:last-child {
+            border-bottom: none;
+        }
+
+        /* オーバーレイ */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            body {
+                padding: 100px 10px 30px;
+            }
+
+
+            .popup-menu {
+                width: 95vw;
+                max-height: 85vh;
+            }
+
+            .ticker-container {
+                height: 45px;
+            }
+
+            .card,
+            details {
+                margin-bottom: 15px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ticker-container" role="marquee" aria-live="polite">
+        <div class="ticker-wrap">
+            <span class="ticker-item">💡 物理定義：周波数 $f$ の変化が光速 $c$ を計測可能な距離 $R$ へと変換する</span>
+            <span class="ticker-item">🧠 SoCの核心：ARMの低消費電力とFFT演算命令が「1mmの解像度」を実現</span>
+            <span class="ticker-item">📶 通信戦略：エッジ処理による生データのダイエットがLPWA通信を支える</span>
+            <span class="ticker-item">🚀 未来：Rapidus 2nmプロセスがエッジAIによる完全自律保全への扉を開く</span>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+    <div id="popupMenu" class="popup-menu" aria-label="目次ナビゲーション" role="dialog" aria-modal="true">
+        <div class="popup-header">
+            <h3>📑 目次</h3>
+            <button class="close-btn" id="closeBtn" aria-label="メニューを閉じる">&times;</button>
+        </div>
+        <div class="popup-content">
+            <details>
+                <summary>1. 水力発電システムの概要</summary>
+                <div class="menu-section-content">
+                    <a href="#overview">セクション全体</a>
+                    <a href="#overview-importance">水力発電における計測・監視・制御の重要性</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>2. 水位計測の歴史と技術的変遷</summary>
+                <div class="menu-section-content">
+                    <a href="#history">セクション全体</a>
+                    <a href="#history-challenges">媒体の変化と現場が直面した技術的課題</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>3. SoCの役割：計測器の統合頭脳</summary>
+                <div class="menu-section-content">
+                    <a href="#soc-role">セクション全体</a>
+                    <a href="#soc-role-necessity">なぜ「普通の計算機」ではなくSoCが必要なのか</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>4. アーキテクチャ戦略：ARMとRISC-V</summary>
+                <div class="menu-section-content">
+                    <a href="#cpu-arch">セクション全体</a>
+                    <a href="#cpu-arch-strategy">コスト構造と将来の価格破壊に向けた選択肢</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>5. 周波数の物理学：FMCWの深層</summary>
+                <div class="menu-section-content">
+                    <a href="#physics-deep">セクション全体</a>
+                    <a href="#physics-deep-precision">なぜ「震え」が「1mmの精度」に化けるのか</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>6. FFT（高速フーリエ変換）の数学的詳解</summary>
+                <div class="menu-section-content">
+                    <a href="#fft-deep">セクション全体</a>
+                    <a href="#fft-deep-magic">カオスな信号から「真実の水位」を分離する数学の魔法</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>7. 次世代半導体Rapidusの衝撃</summary>
+                <div class="menu-section-content">
+                    <a href="#rapidus">セクション全体</a>
+                    <a href="#rapidus-future">2nm世代の国産チップが切り拓く自律判断の未来</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>8. データダイエットと通信最適化</summary>
+                <div class="menu-section-content">
+                    <a href="#lpwa-diet">セクション全体</a>
+                    <a href="#lpwa-diet-necessity">なぜ「現場で解析」することが不可欠なのか</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>9. 水力発電の監視システム</summary>
+                <div class="menu-section-content">
+                    <a href="#monitoring">セクション全体</a>
+                    <a href="#monitoring-realtime">24時間365日の連続監視とリアルタイム制御</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>10. 損失落差による予知保全と経営価値</summary>
+                <div class="menu-section-content">
+                    <a href="#maintenance">セクション全体</a>
+                    <a href="#maintenance-health">計測データが可視化する「水力発電設備の健康寿命」</a>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <main>
+        <h1>水力発電の計測・監視・制御の学習ノート</h1>
+
+        <section id="overview">
+            <h2>1. 水力発電システムの概要</h2>
+            <details>
+                <summary id="overview-importance">水力発電における計測・監視・制御の重要性</summary>
+                <div class="content">
+                    <p>水力発電は、水の位置エネルギーを電気エネルギーに変換する再生可能エネルギーシステムです。発電効率の最大化、設備の安全性確保、予知保全の実現のため、高度な計測・監視・制御技術が不可欠です。</p>
+                    
+                    <div class="card">
+                        <span class="card-title">水力発電システムの構成要素</span>
+                        <p class="card-detail">
+                            <strong>① ダム・取水設備：</strong><br>
+                            上流から水を貯留・取水する設備。水位計測により、貯水量と取水量を正確に把握。<br><br>
+                            <strong>② 水圧管路：</strong><br>
+                            水を発電所まで導く管路。圧力計測により、管路の健全性を監視。<br><br>
+                            <strong>③ 水車：</strong><br>
+                            水の運動エネルギーを回転エネルギーに変換。振動計測により、異常を早期検知。<br><br>
+                            <strong>④ 発電機：</strong><br>
+                            回転エネルギーを電気エネルギーに変換。電圧・電流・周波数の計測により、発電状態を監視。<br><br>
+                            <strong>⑤ 変圧器・送電設備：</strong><br>
+                            発電した電気を送電網に送る設備。電力計測により、送電効率を監視。<br><br>
+                            <strong>⑥ 放水路：</strong><br>
+                            発電後の水を下流に放流する設備。流量計測により、環境への影響を監視。
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <span class="card-title">計測・監視・制御の役割</span>
+                        <p class="card-detail">
+                            <strong>【計測の役割】</strong><br>
+                            ・水位計測：ダムの貯水量、取水量の把握<br>
+                            ・流量計測：水車への供給量の最適化<br>
+                            ・圧力計測：水圧管路の健全性監視<br>
+                            ・振動計測：水車・発電機の異常検知<br>
+                            ・電力計測：発電効率の評価<br><br>
+                            <strong>【監視の役割】</strong><br>
+                            ・リアルタイム監視：24時間365日の連続監視<br>
+                            ・異常検知：AIによる異常パターンの自動検出<br>
+                            ・データ蓄積：長期データによる傾向分析<br>
+                            ・遠隔監視：山間部の発電所を遠隔地から監視<br><br>
+                            <strong>【制御の役割】</strong><br>
+                            ・発電量制御：需要に応じた発電量の調整<br>
+                            ・水門制御：取水量の最適化<br>
+                            ・保護制御：異常時の自動停止<br>
+                            ・最適運転：AIによる運転パターンの最適化
+                        </p>
+                    </div>
+
+                    <div class="note">
+                        <strong>水力発電における水位計測の重要性：</strong><br>
+                        水位計測は、水力発電システムの中核をなす計測技術です。正確な水位データにより、以下のことが実現されます：<br><br>
+                        ・発電可能量の予測：水位から発電可能な電力量を計算<br>
+                        ・取水量の最適化：需要に応じた最適な取水量の決定<br>
+                        ・安全性の確保：異常な水位上昇・下降の早期検知<br>
+                        ・環境への配慮：下流への放流量の適切な管理<br>
+                        ・予知保全：水位データから設備劣化を予測
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <section id="history">
+            <h2>2. 水位計測の歴史と技術的変遷</h2>
+    <details>
+        <summary id="history-challenges">媒体の変化と現場が直面した技術的課題</summary>
+        <div class="content">
+            <p>水位計測は、常に「環境ノイズとの戦い」でした。歴史を辿ることで、なぜ電波式が究極の選択となったかが明確になります。</p>
+                    
+                    <div class="note">
+                        <strong>環境ノイズとは：</strong><br>
+                        環境ノイズとは、計測対象（水面）以外の要因によって計測信号に混入する「不要な情報」のことです。具体的には以下のようなものが挙げられます：<br><br>
+                        <strong>① 物理的ノイズ：</strong><br>
+                        ・雨滴による反射（超音波・電波式）<br>
+                        ・風による水面の波立ちや泡立ち<br>
+                        ・霧や雪による信号の減衰・散乱<br>
+                        ・周囲の構造物（ハシゴ、壁、配管）からの反射<br>
+                        ・流木や浮遊物による一時的な反射<br><br>
+                        <strong>② 環境条件によるノイズ：</strong><br>
+                        ・温度変化による音速の変動（超音波式）<br>
+                        ・湿度による電波の減衰<br>
+                        ・気圧変化による計測誤差<br>
+                        ・太陽光の反射（可視光式）<br><br>
+                        <strong>③ 電磁的ノイズ：</strong><br>
+                        ・周辺の電子機器からの電磁干渉<br>
+                        ・雷や静電気による一時的なノイズ<br>
+                        ・無線通信機器との周波数干渉<br><br>
+                        電波式（FMCW）は、FFT解析によりこれらのノイズを「距離（周波数）ごとに分離」し、水面の反射だけを正確に識別することで、環境ノイズの影響を最小限に抑えています。<br><br>
+                        <strong>【用語解説】</strong><br>
+                        <strong>・電磁干渉（EMI: Electromagnetic Interference）：</strong><br>
+                        周辺の電子機器（モーター、変圧器、インバーターなど）が発生する電磁波が、水位計の計測信号に混入する現象。特に、高周波のスイッチング回路や大電流を扱う機器から発生するノイズが問題となる。対策として、シールドケースによる遮蔽、グラウンド設計の最適化、フィルタ回路の導入などが行われる。<br><br>
+                        <strong>・周波数干渉：</strong><br>
+                        複数の無線通信機器や計測機器が、同じまたは近い周波数帯域を使用することで、相互に信号が干渉し合う現象。超音波式水位計では、複数のセンサーが近接配置されると、互いの超音波が干渉して計測精度が低下する。電波式では、周波数帯域の選択（24GHz帯、77GHz帯など）や、チャネル分離技術により干渉を回避している。
+                    </div>
+            
+            <div class="card">
+                        <span class="card-title">① 量水標（定規）時代 【紀元前～1950年代】</span>
+                        <p class="card-detail">
+                            <strong>【媒体】</strong>可視光<br>
+                            <strong>【歴史的背景】</strong><br>
+                            人類最古の水位計測方法。古代エジプトやメソポタミア文明の時代から、ナイル川やチグリス・ユーフラテス川の水位を石や木の目盛りで記録していた。日本では、江戸時代（1603-1868年）に治水事業が発達し、各地の河川に「水尺」と呼ばれる木製の目盛り板が設置された。明治時代（1868-1912年）に入ると、鉄製の量水標が標準化され、全国の主要河川に設置された。<br><br>
+                            <strong>【技術的特徴】</strong><br>
+                            ・電力不要で安価、設置が簡単<br>
+                            ・目視による直接読み取り<br>
+                            ・記録は手書きの観測日誌に依存<br><br>
+                            <strong>【課題と限界】</strong><br>
+                            ・夜間・吹雪・濃霧時には視認不能<br>
+                            ・危険な増水時には接近不可能<br>
+                            ・読み間違いや転記ミスという「ヒューマンエラー」が最大のリスク<br>
+                            ・リアルタイム監視が不可能<br>
+                            ・観測員の人的コストが継続的に発生<br><br>
+                            <strong>【変遷】</strong><br>
+                            1950年代まで主流だったが、自動化の要求と安全性の問題から、機械式計測器への移行が進んだ。
+                        </p>
+            </div>
+            
+            <div class="card">
+                        <span class="card-title">② フロート式時代 【1950年代～1980年代】</span>
+                        <p class="card-detail">
+                            <strong>【媒体】</strong>ワイヤーによる機械的変位<br>
+                            <strong>【歴史的背景】</strong><br>
+                            1950年代、日本の高度経済成長期に水力発電所の建設ラッシュが始まった。量水標の限界を克服するため、フロート式水位計が広く採用された。フロート（浮子）が水面の上下に追従し、ワイヤーとプーリー機構を通じて機械的な変位を電気信号（電位差や回転角）に変換する方式。1960年代には、記録紙式の自動記録装置が普及し、24時間連続監視が可能になった。<br><br>
+                            <strong>【技術的特徴】</strong><br>
+                            ・水面に浮くため直感的で信頼性が高い<br>
+                            ・機械式のため、電力が途絶えても最後の水位を保持<br>
+                            ・アナログ記録紙による長期データ保存が可能<br>
+                            ・1960年代後半には、デジタル表示器や遠隔監視システムが導入された<br><br>
+                            <strong>【電力供給の問題】</strong><br>
+                            1950-1980年代の山間部の水力発電所では、安定した電力供給が確保されていない場合が多かった。特に：<br>
+                            ・発電所建設初期：送電網が未整備で、発電所自体の電力供給が不安定<br>
+                            ・停電時の影響：記録紙式の自動記録装置やデジタル表示器は、停電時に動作停止<br>
+                            ・バッテリーの限界：当時のバッテリー技術では、長時間のバックアップが困難<br>
+                            ・機械式の利点：フロート式は基本的に機械式のため、電力がなくても水位計測自体は可能（ただし、記録・表示機能は停止）<br>
+                            ・手動記録への回帰：停電時は、観測員が直接フロートの位置を確認し、手動で記録する必要があった<br><br>
+                            この電力供給の問題は、1980年代の超音波式時代に入るまで、大きな制約となっていた。超音波式では、マイクロプロセッサとデジタル信号処理が必要なため、安定した電力供給が必須となった。<br><br>
+                            <strong>【課題と限界】</strong><br>
+                            ・冬場の凍結固着：フロートが氷に閉じ込められ、計測不能に<br>
+                            ・増水時の流木激突：フロートやワイヤーが破損<br>
+                            ・ワイヤーの摩耗：長期間使用で伸びや切れが発生<br>
+                            ・プーリーへの砂詰まり：精度低下の原因<br>
+                            ・定期的な清掃・点検という「肉体労働」が必須<br>
+                            ・メンテナンスコストと人的リスクが継続的に発生<br><br>
+                            <strong>【変遷】</strong><br>
+                            1980年代に入ると、非接触式計測への移行が始まり、特に超音波式が台頭。しかし、現在でも信頼性を重視する現場では補助的な計測器として使用されている。
+                        </p>
+            </div>
+
+            <div class="card">
+                        <span class="card-title">③ 超音波式時代 【1980年代～2000年代】</span>
+                        <p class="card-detail">
+                            <strong>【媒体】</strong>疎密波（音波）<br>
+                            <strong>【歴史的背景】</strong><br>
+                            1980年代、日本の電子技術が成熟期を迎え、超音波式水位計が実用化された。軍事技術（ソナー）の民生転用として、非接触計測の画期的な進歩となった。この時代、日本の電力インフラが整備され、山間部の発電所でも安定した電力供給が確保されるようになった。これにより、マイクロプロセッサとデジタル信号処理を必要とする超音波式が実用化可能になった。1990年代には、マイクロプロセッサの低価格化により、温度補正機能を内蔵した高精度タイプが普及。2000年代には、デジタル信号処理技術の進歩により、ノイズ除去機能が強化された。<br><br>
+                            <strong>【電力供給の安定化】</strong><br>
+                            1980年代に入ると、以下の要因により、安定した電力供給が実現された：<br>
+                            ・送電網の整備：全国的な送電網の拡充により、山間部でも安定した電力供給が可能に<br>
+                            ・発電所の自家発電：水力発電所自体が発電しているため、停電時でも自家発電で計測器を駆動可能<br>
+                            ・UPS（無停電電源装置）の普及：短時間の停電に対応するUPSが普及<br>
+                            ・バッテリー技術の進歩：鉛蓄電池から、より高容量のバッテリーへ進化<br>
+                            ・この安定した電力供給により、マイクロプロセッサとデジタル信号処理を必要とする超音波式が実用化可能になった<br><br>
+                            <strong>【技術的特徴】</strong><br>
+                            ・非接触化により、メンテナンスが大幅に削減<br>
+                            ・デジタル出力により、コンピュータとの連携が容易<br>
+                            ・温度センサーを内蔵し、音速補正を自動実行<br>
+                            ・複数のセンサーをネットワーク化した集中監視システムが構築可能<br><br>
+                            <strong>【コンピュータとの連携方法】</strong><br>
+                            1980年代～1990年代前半：<br>
+                            ・アナログ出力（4-20mA電流ループ）をPLC（プログラマブルロジックコントローラ）で受信<br>
+                            ・PLCがデジタル変換し、RS-232CまたはRS-485シリアル通信で制御室のコンピュータに送信<br>
+                            ・制御室では、専用のデータロガーソフトウェアが水位データを記録紙に印刷、またはフロッピーディスクに保存<br><br>
+                            1990年代後半～2000年代：<br>
+                            ・内蔵マイクロプロセッサが直接デジタル出力（RS-232C、RS-485、イーサネット）を提供<br>
+                            ・WindowsベースのSCADA（Supervisory Control and Data Acquisition）システムと直接接続<br>
+                                ・TCP/IPプロトコルによるネットワーク化が可能に。複数の水位計を1つのコンピュータで集中監視<br><br>
+                                <div class="note">
+                                    <strong>【TCP/IPとは】</strong><br>
+                                    TCP/IP（Transmission Control Protocol/Internet Protocol）は、インターネットで使用される通信プロトコルのセット。TCPとIPを中心としたプロトコル群の総称。現在、世界中のネットワークで標準的に使用されている。<br><br>
+                                    <strong>【TCP/IPの歴史】</strong><br>
+                                    ・1970年代：ARPANET（インターネットの前身）で開発開始<br>
+                                    ・1983年：ARPANETがTCP/IPに完全移行<br>
+                                    ・1990年代：インターネットの爆発的普及により、TCP/IPが世界標準に<br>
+                                    ・現在：インターネット、企業ネットワーク、IoTデバイスなど、あらゆるネットワークで使用<br><br>
+                                    <strong>【TCP/IPの4層モデル】</strong><br>
+                                    TCP/IPは、OSI参照モデルの7層を簡略化した4層モデルで説明されることが多い：<br><br>
+                                    <strong>① リンク層（Link Layer）：</strong><br>
+                                    OSI参照モデルの物理層とデータリンク層に相当。Ethernet、Wi-Fiなどの物理的な通信媒体を定義。<br><br>
+                                    <strong>② インターネット層（Internet Layer）：</strong><br>
+                                    OSI参照モデルのネットワーク層に相当。IP（Internet Protocol）が中心。パケットのルーティング（経路選択）を担当。<br><br>
+                                    <strong>③ トランスポート層（Transport Layer）：</strong><br>
+                                    OSI参照モデルのトランスポート層に相当。TCP（Transmission Control Protocol）とUDP（User Datagram Protocol）が主要プロトコル。<br><br>
+                                    <strong>④ アプリケーション層（Application Layer）：</strong><br>
+                                    OSI参照モデルのセッション層、プレゼンテーション層、アプリケーション層に相当。HTTP、HTTPS、FTP、SMTP、MQTTなどのアプリケーション固有のプロトコル。<br><br>
+                                    <strong>【IP（Internet Protocol）とは】</strong><br>
+                                    IPは、ネットワーク層のプロトコル。パケットを送信元から宛先まで届ける役割を担う。<br><br>
+                                    <strong>【IPの主な機能】</strong><br>
+                                    <strong>① パケットの分割と再構成：</strong><br>
+                                    大きなデータを複数のパケットに分割して送信。受信側で再構成。<br><br>
+                                    <strong>② ルーティング：</strong><br>
+                                    パケットを最適な経路で転送。ルーターが経路を決定。<br><br>
+                                    <strong>③ IPアドレスの管理：</strong><br>
+                                    各デバイスに一意のIPアドレスを割り当て。IPv4（32ビット）とIPv6（128ビット）がある。<br><br>
+                                    <strong>【TCP（Transmission Control Protocol）とは】</strong><br>
+                                    TCPは、トランスポート層のプロトコル。信頼性の高い通信を提供する。<br><br>
+                                    <strong>【TCPの主な機能】</strong><br>
+                                    <strong>① コネクション確立：</strong><br>
+                                    通信開始前に、3ウェイハンドシェイクでコネクションを確立。<br><br>
+                                    <strong>② 信頼性の保証：</strong><br>
+                                    パケットの順序保証、再送制御、エラー検出・訂正を実現。<br><br>
+                                    <strong>③ フロー制御：</strong><br>
+                                    受信側の処理能力に応じて、送信速度を調整。<br><br>
+                                    <strong>④ 輻輳制御：</strong><br>
+                                    ネットワークの混雑に応じて、送信速度を調整。<br><br>
+                                    <strong>【UDP（User Datagram Protocol）とは】</strong><br>
+                                    UDPは、TCPと対照的に、信頼性よりも速度を重視するトランスポート層のプロトコル。<br><br>
+                                    <strong>【UDPの特徴】</strong><br>
+                                    <strong>① コネクションレス：</strong><br>
+                                    コネクションを確立せずに、直接データを送信。<br><br>
+                                    <strong>② 高速：</strong><br>
+                                    オーバーヘッドが少なく、TCPより高速。<br><br>
+                                    <strong>③ 信頼性が低い：</strong><br>
+                                    パケットの順序保証、再送制御がない。パケットが失われる可能性がある。<br><br>
+                                    <strong>【TCPとUDPの比較】</strong><br>
+                                    <table style="width:100%; border-collapse: collapse; margin: 10px 0;">
+                                    <tr style="background-color: #f0f7ff;">
+                                        <th style="border: 1px solid #ddd; padding: 8px;">項目</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">TCP</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">UDP</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">信頼性</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">高い（再送制御あり）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">低い（再送制御なし）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">速度</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">やや遅い</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">高速</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">コネクション</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">必要</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">不要</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">用途</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">Web、メール、ファイル転送</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">動画ストリーミング、DNS、リアルタイム通信</td>
+                                    </tr>
+                                    </table>
+                                    <br>
+                                    <strong>【TCP/IPが水位計に与えた影響】</strong><br>
+                                    TCP/IPの普及により、水位計の機能と運用方法が劇的に変化しました。以下、具体的な影響を時系列で説明します。<br><br>
+                                    <strong>【TCP/IP以前（1990年代前半まで）】</strong><br>
+                                    <strong>① 通信方式：</strong><br>
+                                    ・専用プロトコル：各メーカーが独自の通信プロトコルを使用<br>
+                                    ・RS-232C、RS-485：シリアル通信による1対1の接続<br>
+                                    ・問題点：異なるメーカーの水位計を統合監視することが困難<br>
+                                    ・例：メーカーAの水位計とメーカーBの水位計を同じシステムで監視できない<br><br>
+                                    <strong>② 監視システム：</strong><br>
+                                    ・専用ソフトウェア：各メーカーの専用ソフトウェアが必要<br>
+                                    ・統合の困難さ：複数の専用ソフトウェアを同時に使用する必要がある<br>
+                                    ・コスト：各メーカーからソフトウェアライセンスを購入する必要がある<br><br>
+                                    <strong>③ ネットワーク構成：</strong><br>
+                                    ・点対点接続：1つのコンピュータが1つの水位計に接続<br>
+                                    ・拡張性の欠如：水位計を追加するたびに、新しいコンピュータや専用インターフェースが必要<br>
+                                    ・距離の制限：RS-232Cは最大15m、RS-485は最大1.2km程度<br><br>
+                                    <strong>【TCP/IP導入後（1990年代後半～現在）】</strong><br>
+                                    <strong>① 標準化による統合：</strong><br>
+                                    ・世界標準プロトコル：TCP/IPは世界標準のため、異なるメーカーの水位計でも同じプロトコルを使用可能<br>
+                                    ・統合監視：複数のメーカーの水位計を1つのシステムで監視可能<br>
+                                    ・例：メーカーA、B、Cの水位計を、1つのSCADAシステムで統合監視<br>
+                                    ・コスト削減：専用ソフトウェアが不要になり、標準的なソフトウェアで対応可能<br><br>
+                                    <strong>② ネットワーク化による拡張性：</strong><br>
+                                    ・イーサネット接続：TCP/IP over Ethernetにより、標準的なネットワークケーブルで接続可能<br>
+                                    ・スイッチングハブ：1つのネットワークに複数の水位計を接続可能<br>
+                                    ・拡張性：新しい水位計を追加する際、ネットワークケーブルを接続するだけで対応可能<br>
+                                    ・距離の拡大：イーサネットは最大100m、光ファイバーを使用すれば数kmまで拡張可能<br><br>
+                                    <strong>③ インターネット接続による遠隔監視：</strong><br>
+                                    ・VPN（Virtual Private Network）：インターネット経由で安全に遠隔監視可能<br>
+                                    ・クラウド連携：水位データをクラウドに送信し、どこからでもアクセス可能<br>
+                                    ・モバイルアクセス：スマートフォンやタブレットから水位計にアクセス可能<br>
+                                    ・例：本社から、全国の水力発電所の水位計を一括監視<br><br>
+                                    <strong>④ Web技術の活用：</strong><br>
+                                    ・HTTP/HTTPS：Webブラウザから水位計に直接アクセス可能<br>
+                                    ・設定変更：ブラウザから水位計の設定を変更可能<br>
+                                    ・データ取得：ブラウザからリアルタイムデータを取得可能<br>
+                                    ・ユーザーインターフェース：専用ソフトウェアが不要で、標準的なWebブラウザで操作可能<br>
+                                    ・例：現場の作業員が、スマートフォンのブラウザから水位計の状態を確認<br><br>
+                                    <strong>⑤ IoTプロトコルの活用：</strong><br>
+                                    ・MQTT：IoT向けの軽量通信プロトコル。低帯域幅、低消費電力の環境に適している<br>
+                                    ・クラウド送信：水位データを効率的にクラウドに送信<br>
+                                    ・パブリッシュ/サブスクライブ：複数の監視システムが同じデータを購読可能<br>
+                                    ・例：水位データをクラウドに送信し、複数の監視センターで同時に監視<br><br>
+                                    <strong>⑥ セキュリティの向上：</strong><br>
+                                    ・HTTPS：暗号化通信により、データの盗聴を防止<br>
+                                    ・VPN：インターネット経由でも安全に通信可能<br>
+                                    ・認証：IPアドレス、ユーザー認証により、不正アクセスを防止<br>
+                                    ・例：重要な水力発電所の水位計を、安全に遠隔監視<br><br>
+                                    <strong>【具体的な使用例】</strong><br>
+                                    <strong>① HTTP/HTTPS通信：</strong><br>
+                                    ・Webブラウザから水位計にアクセス（設定変更、データ取得）<br>
+                                    ・TCPを使用（信頼性が重要）<br>
+                                    ・例：制御室のPCから、ブラウザで「http://192.168.1.100」にアクセスし、水位計の設定画面を表示<br><br>
+                                    <strong>② MQTT通信：</strong><br>
+                                    ・IoT向けの軽量通信プロトコル<br>
+                                    ・TCPを使用（信頼性が重要）<br>
+                                    ・水位データをクラウドに送信<br>
+                                    ・例：水位計がMQTTブローカーに「water_level/plant1」というトピックでデータを送信。監視システムがこのトピックを購読してデータを受信<br><br>
+                                    <strong>③ SNMP通信：</strong><br>
+                                    ・ネットワーク管理プロトコル<br>
+                                    ・UDPを使用（高速性が重要）<br>
+                                    ・遠隔監視・診断に使用<br>
+                                    ・例：SNMP管理ソフトウェアが、定期的に水位計の状態（正常/異常、バッテリー残量など）を取得<br><br>
+                                    <strong>【TCP/IP導入による変革のまとめ】</strong><br>
+                                    <table style="width:100%; border-collapse: collapse; margin: 10px 0;">
+                                    <tr style="background-color: #f0f7ff;">
+                                        <th style="border: 1px solid #ddd; padding: 8px;">項目</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">TCP/IP以前</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">TCP/IP導入後</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">通信プロトコル</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">専用プロトコル（メーカー依存）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">TCP/IP（世界標準）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">統合監視</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">困難（メーカーごとに専用ソフトが必要）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">容易（標準ソフトで統合可能）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">ネットワーク構成</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">点対点接続</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">ネットワーク接続（複数デバイス対応）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">遠隔監視</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">困難（専用回線が必要）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">容易（インターネット経由で可能）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">ユーザーインターフェース</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">専用ソフトウェア</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">Webブラウザ（標準）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">拡張性</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">低い（専用インターフェースが必要）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">高い（ネットワークケーブルを接続するだけ）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">コスト</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">高い（専用ソフト、専用回線）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">低い（標準技術、既存ネットワーク活用）</td>
+                                    </tr>
+                                    </table>
+                                    <br>
+                                    <strong>【IPv4とIPv6】</strong><br>
+                                    <strong>IPv4：</strong><br>
+                                    32ビットのIPアドレス。約43億個のアドレスが使用可能。例：192.168.1.1。現在、アドレスが枯渇しつつある。<br><br>
+                                    <strong>IPv6：</strong><br>
+                                    128ビットのIPアドレス。約340澗（かん）個のアドレスが使用可能。例：2001:0db8:85a3:0000:0000:8a2e:0370:7334。IPv4の後継として開発された。<br><br>
+                                    <strong>【水位計におけるIPv6の重要性】</strong><br>
+                                    将来、IoTデバイスが爆発的に増加することを考慮すると、IPv6への移行が重要になります。IPv6により、各水位計に一意のIPアドレスを割り当てることができ、直接インターネットに接続可能になります。
+                                </div>
+                                <br>
+                            ・Modbus、Profibusなどの産業用通信プロトコルに対応<br>
+                            ・データベース（SQL Server、Oracle）への自動記録機能が標準化<br><br>
+                            2000年代後半：<br>
+                            ・Webサーバー機能を内蔵したタイプが登場。ブラウザから直接アクセス可能に<br>
+                            ・XML、JSON形式でのデータ出力により、システム統合が容易に<br>
+                            ・SNMP（Simple Network Management Protocol）による遠隔監視・診断が可能に<br><br>
+                            <strong>【2000年代のデジタル信号処理技術の進歩】</strong><br>
+                            <strong>① 高速ADC（アナログ-デジタル変換器）の実用化：</strong><br>
+                            1990年代は8-12ビット、サンプリング周波数100kHz程度が主流だったが、2000年代には16-24ビット、1MHz以上の高速ADCが低価格化。これにより、より高精度な信号のデジタル化が可能になった。<br><br>
+                            <strong>② DSPチップの高性能化：</strong><br>
+                            Texas InstrumentsのTMS320シリーズ、Analog DevicesのADSPシリーズなど、専用DSPチップが高性能化。FFT演算をリアルタイムで実行可能に。1990年代は1024点FFTに数秒かかっていたが、2000年代には数ミリ秒で完了。<br><br>
+                            <strong>③ デジタルフィルタ技術の進歩：</strong><br>
+                            ・IIR（無限インパルス応答）フィルタ：計算量が少なく、リアルタイム処理に適している<br>
+                            ・FIR（有限インパルス応答）フィルタ：位相特性が線形で、より正確な信号再現が可能<br>
+                            ・適応フィルタ：環境ノイズの特性に自動的に適応し、最適なフィルタリングを実現<br>
+                            ・ウェーブレット変換：FFTに代わる新しい信号解析手法。時間-周波数領域の両方の情報を保持<br><br>
+                            <strong>④ ノイズ除去アルゴリズムの高度化：</strong><br>
+                            ・移動平均フィルタ：一時的なノイズを平滑化<br>
+                            ・メディアンフィルタ：外れ値（異常値）を除去<br>
+                            ・カルマンフィルタ：過去のデータを活用した予測的フィルタリング<br>
+                            ・統計的処理：標準偏差による異常値検出、信頼区間の算出<br><br>
+                            <strong>⑤ マルチチャネル処理：</strong><br>
+                            複数の超音波センサーからの信号を同時に処理し、相互補正により精度を向上。1つのセンサーが故障しても、他のセンサーで補完可能な冗長性を実現。<br><br>
+                            <strong>⑥ リアルタイム信号解析：</strong><br>
+                            受信した超音波信号の波形をリアルタイムで解析し、反射の強度、位相、周波数特性を評価。これにより、水面の状態（波立ち、泡立ち）を検出し、計測精度を自動調整。<br><br>
+                            <strong>【課題と限界】</strong><br>
+                            ・音速は空気密度（温度）に依存：常に $V = 331.5 + 0.6t$ の補正が必要（$t$は摂氏温度）<br>
+                            ・水面の泡立ち：音波が乱反射し、計測値が不安定に<br>
+                            ・霧や雪：音波が減衰・散乱し、計測不能になる場合がある<br>
+                            ・強風：風速10m/s以上で計測精度が著しく低下<br>
+                            ・湿度の影響：高湿度環境では音速が変動し、補正が複雑化<br>
+                            ・周波数干渉：複数の超音波式機器が近接すると相互干渉が発生<br><br>
+                            <strong>【変遷】</strong><br>
+                            2000年代後半、電波式（FMCW）の実用化により、特に厳しい環境（山間部、寒冷地）での採用が減少。しかし、比較的安定した環境では、コストパフォーマンスの良さから現在も広く使用されている。
+                        </p>
+            </div>
+
+            <div class="card">
+                        <span class="card-title">④ 電波式（現代） 【2000年代後半～現在】</span>
+                        <p class="card-detail">
+                            <strong>【媒体】</strong>電磁波（ミリ波、24GHz/77GHz帯）<br><br>
+                            <strong>【用語解説】</strong><br>
+                            <strong>・電磁波：</strong><br>
+                            電場と磁場が互いに振動しながら空間を伝播する波。光、電波、X線、ガンマ線など、すべて電磁波の一種。周波数（振動数）によって性質が異なり、可視光は約400-800THz、ミリ波は30-300GHzの範囲。電磁波は真空中でも伝播し、光速（約30万km/s）で進むため、大気の状態（温度、湿度、気圧）の影響をほとんど受けない。これが、超音波（音速約340m/s、温度依存）と比べて電波式が高精度・高安定性を実現できる根本的な理由である。<br><br>
+                            <strong>・ミリ波：</strong><br>
+                            波長が1mm～10mm（周波数30GHz～300GHz）の電磁波。ミリ波の名称は、波長がミリメートル単位であることに由来する。特徴として、①直進性が強く、反射・散乱が少ない、②高い周波数により、短い時間で多くの情報を伝送できる、③アンテナを小型化できる、④大気中の酸素や水蒸気による吸収があるが、24GHz帯や77GHz帯は「大気の窓」と呼ばれ、比較的透過しやすい。水位計では、24GHz帯（波長約12.5mm）と77GHz帯（波長約3.9mm）が主流。77GHz帯の方が波長が短いため、より高い解像度（1mm以下）での計測が可能だが、大気による減衰も大きくなる。<br><br>
+                            <strong>・波長とは：</strong><br>
+                            波長（$\lambda$）は、波の1周期分の長さ。電磁波の場合、波長と周波数（$f$）は以下の関係で結ばれている：<br><br>
+                            $\lambda = \frac{c}{f}$<br><br>
+                            ここで、$c$は光速（約$3 \times 10^8$ m/s）。例えば、24GHz（$24 \times 10^9$ Hz）の電磁波の波長は：<br><br>
+                            $\lambda = \frac{3 \times 10^8}{24 \times 10^9} = 0.0125$ m = 12.5mm<br><br>
+                            <strong>【波長と計測精度の関係】</strong><br>
+                            波長が短いほど、より細かい距離の違いを検出できる（解像度が向上）。これは、波長が短いほど、反射面の微小な凹凸や位置の違いを識別しやすくなるため。77GHz帯（波長3.9mm）は24GHz帯（波長12.5mm）より約3倍短いため、理論上3倍の解像度が可能。ただし、波長が短すぎると、大気中の水蒸気や酸素による吸収が大きくなり、減衰が問題となる。そのため、水位計では「大気の窓」と呼ばれる特定の周波数帯（24GHz、77GHz）が選ばれている。<br><br>
+                            <strong>【歴史的背景】</strong><br>
+                            電波式水位計の技術的ルーツは、1940年代のレーダー技術にある。しかし、当時は軍事・航空用途に限定され、解析チップが高価で民生利用は不可能だった。転機は2000年代：スマートフォンの爆発的普及により、ミリ波帯の半導体チップが大量生産され、コストが劇的に低下。2005年頃から、欧米でFMCW（Frequency Modulated Continuous Wave）方式の水位計が実用化され、日本では2010年代に本格導入が始まった。<br><br>
+                            <strong>【レーダー技術とは】</strong><br>
+                            レーダー（RADAR: Radio Detection and Ranging）は、電磁波を送信し、対象物からの反射波を受信することで、距離・方向・速度を測定する技術。1940年代、第二次世界大戦中に軍事技術として急速に発展した。<br><br>
+                            <strong>【レーダーの基本原理】</strong><br>
+                            ① 送信：アンテナから電磁波パルスを送信<br>
+                            ② 反射：対象物（航空機、船舶など）で電磁波が反射<br>
+                            ③ 受信：反射波をアンテナで受信<br>
+                            ④ 距離計算：送信から受信までの時間差 $\Delta t$ から距離 $R$ を算出<br><br>
+                            $R = \frac{c \cdot \Delta t}{2}$<br><br>
+                            ここで、$c$は光速。2で割るのは、電磁波が往復するため。<br><br>
+                            <strong>【レーダーの種類】</strong><br>
+                            <strong>① パルスレーダー：</strong><br>
+                            短い電磁波パルスを送信し、反射波の時間差で距離を測定。古典的な方式で、航空管制、気象観測などに使用。距離分解能はパルス幅に依存。<br><br>
+                            <strong>② 連続波レーダー（CW: Continuous Wave）：</strong><br>
+                            連続的に電磁波を送信。ドップラー効果を利用して速度を測定。距離は測定できないが、速度測定に優れている。<br><br>
+                            <strong>③ FMCWレーダー：</strong><br>
+                            周波数を連続的に変化させた連続波を送信。送信波と反射波の周波数差（ビート周波数）から距離を測定。パルスレーダーより高精度で、距離と速度の両方を同時に測定可能。水位計で採用されている方式。<br><br>
+                            <strong>【レーダーから水位計への技術転用】</strong><br>
+                            軍事・航空用レーダーは、大型で高価、消費電力も大きかった。しかし、1990年代以降の半導体技術の進歩により、小型・低価格・低消費電力のミリ波レーダーチップが実現。これが水位計への応用を可能にした。特に、自動車の衝突回避システム（1990年代後半）や、スマートフォンの近接センサー（2000年代）の開発が、ミリ波技術の民生化を加速させた。<br><br>
+                            <strong>【技術的特徴】</strong><br>
+                            ・光速に近い速度（約30万km/s）で計測するため、天候の影響をほぼ受けない<br>
+                            ・FMCW方式により、1mmレベルの高精度計測が可能<br>
+                            ・FFT解析により、環境ノイズ（雨、霧、構造物の反射）を自動除去<br>
+                            ・温度・湿度・気圧の影響が極めて小さい<br>
+                            ・非接触で、メンテナンスフリーに近い<br>
+                            ・デジタル出力により、IoTシステムとの統合が容易<br><br>
+                            <strong>【技術的変遷】</strong><br>
+                            <strong>2010年代前半：</strong> 24GHz帯が主流。SoCの進化により、FFT演算が高速化。<br>
+                            <strong>2010年代後半：</strong> 77GHz帯の採用が増加。より高い周波数により、精度と解像度が向上。<br>
+                            <strong>2020年代：</strong> ARM SoCの低消費電力化により、バッテリー駆動が実現。山間部での無線監視システムが普及。<br>
+                            <strong>現在：</strong> Rapidus 2nmプロセスの登場により、エッジAIによる自律判断機能が実現しつつある。<br><br>
+                            <strong>【課題と今後の展望】</strong><br>
+                            ・初期コストは他の方式より高いが、メンテナンスコストの削減により、長期的にはコスト優位性が高い<br>
+                            ・電磁干渉への対策（シールド設計、周波数選択）が重要<br>
+                            ・次世代半導体技術により、さらなる省電力化とAI機能の統合が期待される<br>
+                            ・完全自律型の予知保全システムへの進化が進行中
+                        </p>
+            </div>
+        </div>
+    </details>
+        </section>
+
+        <section id="soc-role">
+            <h2>3. SoC（System on Chip）の役割と具体的機能</h2>
+    <details>
+        <summary id="soc-role-necessity">なぜ「普通の計算機」ではなくSoCが必要なのか</summary>
+        <div class="content">
+            <p>SoCは、CPU、メモリ、DSP（デジタル信号処理）、通信機能を1mm角のシリコンに集積した「統合頭脳」です。</p>
+            
+                    <div class="note">
+                        <strong>【SoCとは何の略か】</strong><br>
+                        SoCは「System on Chip（システム・オン・チップ）」の略称。日本語では「システムLSI」や「ワンチップシステム」とも呼ばれる。<br><br>
+                        <strong>【SoCの意味】</strong><br>
+                        <strong>・System（システム）：</strong><br>
+                        複数の機能要素（CPU、メモリ、DSP、通信機能など）が統合されたシステム全体を指す。<br><br>
+                        <strong>・on Chip（チップ上）：</strong><br>
+                        これらの機能要素が、1つの半導体チップ（シリコンチップ）上に集積されていることを意味する。<br><br>
+                        <strong>【SoCの対比概念】</strong><br>
+                        <strong>・SoB（System on Board）：</strong><br>
+                        複数のチップを基板上に配置したシステム。SoC以前の一般的な構成。<br><br>
+                        <strong>・SoM（System on Module）：</strong><br>
+                        SoCと周辺回路をモジュール化したもの。開発を簡素化するための形態。<br><br>
+                        <strong>・SiP（System in Package）：</strong><br>
+                        複数のチップを1つのパッケージに封入したもの。SoCと異なり、複数のチップが物理的に分離されている。<br><br>
+                        <strong>【SoCの特徴】</strong><br>
+                        SoCの「on Chip」という表現は、全ての機能が1つのシリコンチップ上に物理的に集積されていることを強調している。これにより、小型化、低消費電力、高速化、低コストが実現される。
+                    </div>
+                    
+                    <div class="card">
+                        <span class="card-title">SoCの進化の歴史</span>
+                        <p class="card-detail">
+                            <strong>【1970年代：マイクロプロセッサの誕生】</strong><br>
+                            1971年、Intel 4004（4ビット）が世界初のマイクロプロセッサとして登場。その後、8ビット（Intel 8080、1974年）、16ビット（Intel 8086、1978年）と進化。この時代は、CPU、メモリ、入出力回路が別々のチップに分かれていた。<br><br>
+                            <strong>【1980年代：マイコン（マイクロコントローラ）の普及】</strong><br>
+                            CPU、メモリ、入出力を1チップに統合したマイコンが登場（例：Intel 8051、1980年）。これがSoCの原型。しかし、信号処理機能は未搭載で、単純な制御用途に限定されていた。<br><br>
+                            <strong>【1990年代：DSP統合の始まり】</strong><br>
+                            デジタル信号処理（DSP）機能を内蔵したSoCが登場。携帯電話の普及により、音声処理、変復調処理を1チップで実現する必要が生じた。Texas InstrumentsのOMAPシリーズなどが代表例。この時代、プロセスルールは0.5μm（500nm）程度。<br><br>
+                            <strong>【2000年代：マルチコアと統合の加速】</strong><br>
+                            ・ARMアーキテクチャの普及：低消費電力で高性能なARMコアがSoCの主流に<br>
+                            ・マルチコア化：複数のCPUコアを1チップに統合（例：デュアルコア、クアッドコア）<br>
+                            ・通信機能の統合：Wi-Fi、Bluetooth、GPSなどの無線通信機能がSoCに内蔵<br><br>
+                            <div class="note">
+                                <strong>【Wi-Fiとは】</strong><br>
+                                Wi-Fi（Wireless Fidelity）は、IEEE 802.11規格に基づく無線LAN（Local Area Network）技術。有線LAN（Ethernet）の無線版として開発された。<br><br>
+                                <div class="note">
+                                    <strong>【IEEE 802.11規格とは】</strong><br>
+                                    IEEE 802.11は、IEEE（Institute of Electrical and Electronics Engineers：米国電気電子学会）が制定した無線LANの国際標準規格。1997年に最初の規格が制定され、その後、高速化・高機能化が進んでいる。<br><br>
+                                    <strong>【IEEE 802.11規格の変遷】</strong><br>
+                                    <strong>① IEEE 802.11（1997年）：</strong><br>
+                                    最初のWi-Fi規格。通信速度1-2Mbps。現在は使用されていない。<br><br>
+                                    <strong>② IEEE 802.11a（1999年）：</strong><br>
+                                    5GHz帯、最大54Mbps。OFDM変調方式を採用。2.4GHz帯の混雑を回避できるが、通信距離が短い。<br><br>
+                                    <strong>③ IEEE 802.11b（1999年）：</strong><br>
+                                    2.4GHz帯、最大11Mbps。DSSS変調方式。最初に広く普及したWi-Fi規格。<br><br>
+                                    <strong>④ IEEE 802.11g（2003年）：</strong><br>
+                                    2.4GHz帯、最大54Mbps。802.11bと後方互換性がある。OFDM変調方式を採用。<br><br>
+                                    <strong>⑤ IEEE 802.11n（2009年、Wi-Fi 4）：</strong><br>
+                                    2.4GHz/5GHz帯、最大600Mbps。MIMO（Multiple Input Multiple Output）技術を採用。複数のアンテナで同時送受信し、通信速度と信頼性を向上。<br><br>
+                                    <strong>⑥ IEEE 802.11ac（2013年、Wi-Fi 5）：</strong><br>
+                                    5GHz帯、最大6.9Gbps。より高度なMIMO技術（MU-MIMO：Multi-User MIMO）を採用。複数のデバイスに同時送信可能。<br><br>
+                                    <strong>⑦ IEEE 802.11ax（2019年、Wi-Fi 6）：</strong><br>
+                                    2.4GHz/5GHz/6GHz帯、最大9.6Gbps。OFDMA（Orthogonal Frequency Division Multiple Access）を採用。複数のデバイスが同時に通信可能。省電力機能も強化。<br><br>
+                                    <strong>⑧ IEEE 802.11be（2024年、Wi-Fi 7）：</strong><br>
+                                    2.4GHz/5GHz/6GHz帯、最大46Gbps。320MHzチャネル幅、4096-QAM変調を採用。超高速通信を実現。<br><br>
+                                    <strong>【IEEE 802.11規格の技術的特徴】</strong><br>
+                                    <strong>① 変調方式：</strong><br>
+                                    ・DSSS（Direct Sequence Spread Spectrum）：802.11bで使用<br>
+                                    ・OFDM（Orthogonal Frequency Division Multiplexing）：802.11a/g/n/ac/ax/beで使用。複数のサブキャリアを使用して高速通信を実現。<br>
+                                    ・OFDMA（Orthogonal Frequency Division Multiple Access）：802.11ax/beで使用。複数のデバイスが同時に通信可能。<br><br>
+                                    <strong>② MIMO技術：</strong><br>
+                                    複数のアンテナで同時に送受信し、通信速度と信頼性を向上。802.11n以降で採用。<br>
+                                    ・SU-MIMO（Single-User MIMO）：1つのデバイスに複数のストリームを送信<br>
+                                    ・MU-MIMO（Multi-User MIMO）：複数のデバイスに同時に送信<br><br>
+                                    <strong>③ チャネルボンディング：</strong><br>
+                                    複数のチャネルを結合して、より広い帯域幅で通信。802.11n以降で採用。<br>
+                                    ・802.11n：最大40MHz<br>
+                                    ・802.11ac：最大160MHz<br>
+                                    ・802.11ax/be：最大320MHz<br><br>
+                                    <strong>【IEEE 802.11規格の互換性】</strong><br>
+                                    IEEE 802.11規格は、基本的に後方互換性がある。例：802.11ax対応デバイスは、802.11n、802.11ac対応アクセスポイントとも通信可能（ただし、古い規格の速度で通信）。<br><br>
+                                    <strong>【水位計におけるIEEE 802.11規格の選択】</strong><br>
+                                    <strong>① 802.11n（Wi-Fi 4）：</strong><br>
+                                    ・用途：一般的な水位計、コスト重視<br>
+                                    ・利点：低コスト、広範囲の互換性<br>
+                                    ・通信速度：最大150Mbps（実効速度は環境による）<br><br>
+                                    <strong>② 802.11ac（Wi-Fi 5）：</strong><br>
+                                    ・用途：高速通信が必要な水位計<br>
+                                    ・利点：高速、5GHz帯の混雑が少ない<br>
+                                    ・通信速度：最大433Mbps（実効速度は環境による）<br><br>
+                                    <strong>③ 802.11ax（Wi-Fi 6）：</strong><br>
+                                    ・用途：最新の水位計、省電力重視<br>
+                                    ・利点：省電力、複数デバイス対応、高速<br>
+                                    ・通信速度：最大600Mbps（実効速度は環境による）<br>
+                                </div>
+                                <br>
+                                <strong>【Wi-Fiの歴史】</strong><br>
+                                ・1997年：IEEE 802.11規格が制定（最初のWi-Fi）<br>
+                                ・1999年：IEEE 802.11b（11Mbps、2.4GHz帯）が普及開始<br>
+                                ・2003年：IEEE 802.11g（54Mbps、2.4GHz帯）が登場<br>
+                                ・2009年：IEEE 802.11n（600Mbps、2.4GHz/5GHz帯）が登場<br>
+                                ・2013年：IEEE 802.11ac（6.9Gbps、5GHz帯）が登場<br>
+                                ・2019年：IEEE 802.11ax（Wi-Fi 6、9.6Gbps）が登場<br>
+                                ・2024年：IEEE 802.11be（Wi-Fi 7、46Gbps）が登場<br><br>
+                                <strong>【Wi-Fiの周波数帯域】</strong><br>
+                                <strong>① 2.4GHz帯：</strong><br>
+                                ・チャネル数：14チャネル（国により異なる）<br>
+                                ・特徴：壁などの障害物を透過しやすい、通信距離が長い<br>
+                                ・欠点：Bluetooth、電子レンジなどと干渉しやすい、混雑しやすい<br>
+                                ・用途：一般的なWi-Fi、IoTデバイス<br><br>
+                                <strong>② 5GHz帯：</strong><br>
+                                ・チャネル数：多数のチャネル（国により異なる）<br>
+                                ・特徴：高速、干渉が少ない<br>
+                                ・欠点：壁などの障害物で減衰しやすい、通信距離が短い<br>
+                                ・用途：高速通信が必要な用途（動画ストリーミングなど）<br><br>
+                                <strong>③ 6GHz帯（Wi-Fi 6E、Wi-Fi 7）：</strong><br>
+                                ・最新のWi-Fi規格で使用<br>
+                                ・特徴：超高速、干渉が極めて少ない<br>
+                                ・用途：次世代アプリケーション（VR、AR、8K動画など）<br><br>
+                                <strong>【Wi-Fiの通信方式】</strong><br>
+                                <strong>① インフラストラクチャモード：</strong><br>
+                                アクセスポイント（AP）を経由して通信。一般的なWi-Fiの使用形態。<br>
+                                ・構成：デバイス ↔ アクセスポイント ↔ インターネット<br>
+                                ・用途：家庭、オフィス、公共Wi-Fiなど<br><br>
+                                <strong>② アドホックモード：</strong><br>
+                                アクセスポイントを経由せず、デバイス間で直接通信。<br>
+                                ・構成：デバイス ↔ デバイス<br>
+                                ・用途：一時的な通信、メッシュネットワークなど<br><br>
+                                <strong>【Wi-Fiのセキュリティ】</strong><br>
+                                <strong>① WEP（Wired Equivalent Privacy）：</strong><br>
+                                初期の暗号化方式。現在は脆弱で推奨されない。<br><br>
+                                <strong>② WPA（Wi-Fi Protected Access）：</strong><br>
+                                WEPの後継。より強力な暗号化。<br><br>
+                                <strong>③ WPA2：</strong><br>
+                                現在最も広く使用されている。AES暗号化を使用。<br><br>
+                                <strong>④ WPA3：</strong><br>
+                                最新のセキュリティ規格。より強力な暗号化と認証。<br><br>
+                                <strong>【Wi-Fiの利点と欠点】</strong><br>
+                                <strong>利点：</strong><br>
+                                ・高速通信（最大46Gbps、Wi-Fi 7）<br>
+                                ・広範囲の通信（最大100m程度、環境による）<br>
+                                ・既存のインフラ（アクセスポイント）を利用可能<br>
+                                ・標準化されており、互換性が高い<br><br>
+                                <strong>欠点：</strong><br>
+                                ・消費電力が大きい（特に送信時）<br>
+                                ・通信距離が限られる（LPWAより短い）<br>
+                                ・アクセスポイントが必要（インフラストラクチャモードの場合）<br>
+                                ・セキュリティ設定が必要<br><br>
+                                <strong>【水位計におけるWi-Fiの応用】</strong><br>
+                                <strong>① 近距離通信：</strong><br>
+                                ・制御室や事務所から、近くの水位計にアクセス<br>
+                                ・高速データ転送（設定変更、ファームウェア更新など）<br>
+                                ・例：オフィスから500m以内の水位計にWi-Fiで接続<br><br>
+                                <strong>② メッシュネットワーク：</strong><br>
+                                ・複数の水位計がWi-Fiで相互接続<br>
+                                ・1つのアクセスポイントで複数の水位計を管理<br>
+                                ・例：ダム周辺の複数の水位計がWi-Fiメッシュで接続<br><br>
+                                <strong>③ バックアップ通信：</strong><br>
+                                ・LPWAが故障した場合のバックアップとして使用<br>
+                                ・例：通常はLPWA、緊急時はWi-Fiで通信<br><br>
+                                <strong>【Wi-FiとLPWAの比較】</strong><br>
+                                <table style="width:100%; border-collapse: collapse; margin: 10px 0;">
+                                <tr style="background-color: #f0f7ff;">
+                                    <th style="border: 1px solid #ddd; padding: 8px;">項目</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">Wi-Fi</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">LPWA（LoRaWAN）</th>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">通信速度</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">高速（最大46Gbps）</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">低速（数kbps）</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">通信距離</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">短距離（最大100m）</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">長距離（最大10km以上）</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">消費電力</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">高い</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">低い</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">用途</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">近距離、高速通信</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">遠距離、低消費電力</td>
+                                </tr>
+                                </table>
+                            </div>
+                            <br>
+                            ・プロセスルール：90nm（2003年）→65nm（2006年）→45nm（2008年）と微細化が進展<br>
+                            ・スマートフォンの登場（2007年、iPhone）により、SoCの需要が爆発的に増加<br><br>
+                            <strong>【2010年代：高度な統合とAI機能】</strong><br>
+                            ・GPU統合：画像処理専用のGPUコアがSoCに内蔵（例：Qualcomm Snapdragon）<br>
+                            ・AIアクセラレータ：機械学習推論を高速化する専用回路（NPU: Neural Processing Unit）が搭載<br>
+                            ・プロセスルール：28nm（2011年）→20nm（2014年）→14nm（2015年）→10nm（2017年）→7nm（2018年）<br>
+                            ・水位計への応用：2010年代前半から、24GHz帯FMCWレーダー用SoCが実用化<br>
+                            ・省電力化：バッテリー駆動のIoTデバイス向けに、超低消費電力SoCが開発<br><br>
+                            <strong>【2020年代：エッジAIと次世代プロセス】</strong><br>
+                            ・エッジAI SoC：現場でAI推論を実行する専用SoCが普及<br>
+                            ・プロセスルール：5nm（2020年）→3nm（2022年）→2nm（2027年予定、Rapidus）<br>
+                            ・3D集積技術：チップを積層し、さらなる小型化と高性能化を実現<br>
+                            ・専用SoC：水位計、気象観測、農業IoTなど、用途特化型SoCが増加<br>
+                            ・オープンソースアーキテクチャ：RISC-VベースのSoCが台頭<br><br>
+                            <strong>【プロセスルールとは】</strong><br>
+                            プロセスルール（Process Rule）は、半導体チップの微細化の指標で、トランジスタの最小寸法（ゲート長）を表す。単位はナノメートル（nm）。数値が小さいほど、より微細な加工が可能で、高性能・低消費電力・小型化が実現できる。<br><br>
+                            <strong>【プロセスルールの意味】</strong><br>
+                            ・7nmプロセス：トランジスタのゲート長が約7nm（0.000007mm）<br>
+                            ・2nmプロセス：トランジスタのゲート長が約2nm（0.000002mm）<br>
+                            ・比較：人間の髪の毛の直径は約0.1mm（100,000nm）。2nmは髪の毛の5万分の1の細さ。<br><br>
+                            <strong>【プロセスルールの進化と効果】</strong><br>
+                            <strong>① トランジスタ密度の向上：</strong><br>
+                            プロセスルールが小さくなるほど、同じ面積により多くのトランジスタを配置できる。例：7nmから2nmへの移行で、約3.5倍のトランジスタ密度が可能。<br><br>
+                            <strong>② 動作速度の向上：</strong><br>
+                            微細化により、信号の伝播距離が短くなり、動作速度が向上。例：7nmから2nmへの移行で、約1.5倍の動作速度向上。<br><br>
+                            <strong>③ 消費電力の削減：</strong><br>
+                            微細化により、動作電圧が低下し、消費電力が削減。例：7nmから2nmへの移行で、同じ性能の場合、約40%の消費電力削減が可能。<br><br>
+                            <strong>④ 性能/電力比の向上：</strong><br>
+                            性能向上と消費電力削減の両立により、性能/電力比が大幅に向上。例：7nmから2nmへの移行で、約2.5倍の性能/電力比向上。<br><br>
+                            <strong>【プロセスルールの技術的課題】</strong><br>
+                            <strong>① 製造コストの増加：</strong><br>
+                            微細化が進むほど、製造設備（EUVリソグラフィなど）への投資が膨大になる。2nmプロセスの製造設備は数兆円規模。<br><br>
+                            <strong>② リーク電流の増加：</strong><br>
+                            微細化が進むと、トランジスタのオフ状態でも電流が漏れる（リーク電流）問題が深刻化。省電力設計が重要。<br><br>
+                            <strong>③ 製造歩留まりの低下：</strong><br>
+                            微細化が進むと、製造時の不良品率が増加する傾向がある。歩留まり向上のための技術開発が継続的に必要。<br><br>
+                            <strong>④ 物理的限界：</strong><br>
+                            原子レベルの微細化により、量子効果や原子の不規則性が問題となる。1nm以下への進化には、新しい材料や構造（例：ナノワイヤ、2D材料）が必要。<br><br>
+                            <strong>【プロセスルールの歴史的変遷】</strong><br>
+                            1970年代：10μm（10,000nm）- 最初のマイクロプロセッサ<br>
+                            1980年代：3μm（3,000nm）- 16ビットCPU<br>
+                            1990年代：0.5μm（500nm）- 32ビットCPU、DSP統合<br>
+                            2000年代：90nm → 65nm → 45nm - マルチコア、無線通信統合<br>
+                            2010年代：28nm → 20nm → 14nm → 10nm → 7nm - GPU、AI統合<br>
+                            2020年代：5nm → 3nm → 2nm（予定）- エッジAI、次世代アプリケーション<br><br>
+                            <strong>【水位計におけるプロセスルールの影響】</strong><br>
+                            ・2010年代（28-7nm）：24GHz帯FMCWレーダー用SoCが実用化。FFT演算をリアルタイム実行可能に。<br>
+                            ・2020年代（7-5nm）：77GHz帯対応、バッテリー駆動が実現。LPWA通信内蔵。<br>
+                            ・2027年以降（2nm、Rapidus）：エッジAI統合、完全自律型予知保全が可能に。消費電力がさらに削減され、太陽光パネルなしの長期駆動が実現。<br><br>
+                            <strong>【SoCの統合要素の変遷】</strong><br>
+                            1970年代：CPUのみ<br>
+                            1980年代：CPU + メモリ + 入出力<br>
+                            1990年代：CPU + メモリ + 入出力 + DSP<br>
+                            2000年代：CPU + メモリ + 入出力 + DSP + 無線通信<br>
+                            2010年代：CPU + メモリ + 入出力 + DSP + 無線通信 + GPU<br>
+                            2020年代：CPU + メモリ + 入出力 + DSP + 無線通信 + GPU + AIアクセラレータ<br><br>
+                            <strong>【水位計におけるSoCの進化】</strong><br>
+                            ・2010年代：24GHz帯FMCWレーダー用SoC、FFT演算をリアルタイム実行<br>
+                            ・2020年代：77GHz帯対応、バッテリー駆動、LPWA通信内蔵<br>
+                            ・2030年代（予測）：Rapidus 2nmプロセス、エッジAI統合、完全自律型予知保全
+                        </p>
+                    </div>
+                    
+                    <div class="card">
+                        <span class="card-title">SoCが無線通信と統合される以前と以後の変化</span>
+                        <p class="card-detail">
+                            <strong>【統合以前（1990年代～2000年代前半）】</strong><br>
+                            <strong>① システム構成：</strong><br>
+                            ・SoC（CPU、メモリ、DSP）と無線通信モジュールが別々のチップ<br>
+                            ・複数のチップを基板上に配置する必要があった<br>
+                            ・基板面積が大きくなり、デバイスの小型化が困難<br>
+                            ・例：水位計では、SoCチップ、Wi-Fiモジュール、Bluetoothモジュールが別々に配置されていた<br><br>
+                            <div class="note">
+                                <strong>【Wi-Fiモジュールとは】</strong><br>
+                                Wi-Fiモジュールは、Wi-Fi通信機能を実装した独立した電子部品。SoCと別のチップとして実装され、UART、SPI、SDIOなどのインターフェースで接続される。<br><br>
+                                <strong>【Wi-Fiモジュールの構成要素】</strong><br>
+                                <strong>① Wi-Fiチップ：</strong><br>
+                                IEEE 802.11規格に準拠した無線通信チップ。2.4GHz帯、5GHz帯の電波を送受信。<br><br>
+                                <strong>② アンテナ：</strong><br>
+                                電波を送受信するアンテナ。モジュール内蔵型、外部接続型がある。<br><br>
+                                <strong>③ プロトコルスタック：</strong><br>
+                                TCP/IP、Wi-Fi（IEEE 802.11）のプロトコルスタックを実装。通常、ファームウェアとして内蔵されている。<br><br>
+                                <strong>④ インターフェース回路：</strong><br>
+                                SoCとの接続用のインターフェース（UART、SPI、SDIOなど）を実装。<br><br>
+                                <strong>【Wi-Fiモジュールの種類】</strong><br>
+                                <strong>① スタンドアロン型：</strong><br>
+                                プロトコルスタックを内蔵し、SoCからはシンプルなコマンドで制御可能。例：ESP8266、ESP32、RN171など。<br><br>
+                                <strong>② ホスト型：</strong><br>
+                                プロトコルスタックをSoC側で実装し、Wi-Fiモジュールは物理層・データリンク層のみを担当。例：Wi-Fiアダプター。<br><br>
+                                <strong>【Wi-Fiモジュールの利点と欠点】</strong><br>
+                                <strong>利点：</strong><br>
+                                ・開発が容易（プロトコルスタックが内蔵されている）<br>
+                                ・認証取得済み（FCC、CEなど）<br><br>
+                                <div class="note">
+                                    <strong>【FCCとCEとは】</strong><br>
+                                    <strong>・FCC（Federal Communications Commission：連邦通信委員会）：</strong><br>
+                                    米国の連邦政府機関。無線通信機器の電波法規制を担当。FCC認証は、米国で無線通信機器を販売する際に必須。<br><br>
+                                    <strong>FCC認証の目的：</strong><br>
+                                    ・電波の適切な使用を確保<br>
+                                    ・他の機器への電磁干渉（EMI）を防止<br>
+                                    ・人体への電磁波の影響を制限<br>
+                                    ・通信の安全性と信頼性を確保<br><br>
+                                    <strong>FCC認証の種類：</strong><br>
+                                    ・FCC Part 15：意図的放射（Wi-Fi、Bluetoothなど）<br>
+                                    ・FCC Part 18：産業用、科学用、医療用機器<br>
+                                    ・FCC Part 90：陸上移動無線サービス<br><br>
+                                    <strong>FCC認証マーク：</strong><br>
+                                    FCC認証を取得した機器には、「FCC ID」が表示される。例：FCC ID: 2ABCD-12345<br><br>
+                                    <strong>・CE（Conformité Européenne：欧州適合マーク）：</strong><br>
+                                    欧州連合（EU）で、製品がEUの安全・健康・環境保護の要件を満たしていることを示すマーク。無線通信機器を含む多くの製品で必須。<br><br>
+                                    <strong>CEマーキングの目的：</strong><br>
+                                    ・EU域内での製品の自由な流通を確保<br>
+                                    ・製品の安全性を確保<br>
+                                    ・消費者と環境の保護<br>
+                                    ・電磁両立性（EMC）の確保<br><br>
+                                    <strong>CEマーキングに関連する指令：</strong><br>
+                                    ・RED（Radio Equipment Directive：無線機器指令）：無線通信機器<br>
+                                    ・EMC指令：電磁両立性<br>
+                                    ・低電圧指令：電気的安全性<br>
+                                    ・RoHS指令：有害物質の使用制限<br><br>
+                                    <strong>CEマーキングのプロセス：</strong><br>
+                                    ① 適合性評価（自己宣言または第三者機関による認証）<br>
+                                    ② 技術文書の作成<br>
+                                    ③ CEマークの貼付<br>
+                                    ④ 適合宣言書（DoC：Declaration of Conformity）の作成<br><br>
+                                    <strong>【FCCとCEの比較】</strong><br>
+                                    <table style="width:100%; border-collapse: collapse; margin: 10px 0;">
+                                    <tr style="background-color: #f0f7ff;">
+                                        <th style="border: 1px solid #ddd; padding: 8px;">項目</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">FCC</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">CE</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">適用地域</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">米国</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">欧州連合（EU）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">認証機関</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">FCC（政府機関）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">自己宣言または第三者機関</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">対象製品</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">無線通信機器</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">幅広い製品（無線機器含む）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">認証マーク</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">FCC ID</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">CEマーク</td>
+                                    </tr>
+                                    </table>
+                                    <br>
+                                    <strong>【水位計におけるFCC/CE認証の重要性】</strong><br>
+                                    <strong>① 法的要件：</strong><br>
+                                    米国やEUで水位計を販売する際、FCC/CE認証は法的に必須。認証なしでは販売できない。<br><br>
+                                    <strong>② 市場参入：</strong><br>
+                                    FCC/CE認証を取得することで、米国・EU市場への参入が可能になる。<br><br>
+                                    <strong>③ 信頼性：</strong><br>
+                                    認証取得済みの製品は、電磁干渉や安全性の面で信頼性が高いことを示す。<br><br>
+                                    <strong>④ Wi-Fiモジュールの利点：</strong><br>
+                                    Wi-Fiモジュールが既にFCC/CE認証を取得している場合、水位計全体の認証取得が簡素化される。ただし、水位計全体としても認証が必要な場合がある。
+                                </div>
+                                <br>
+                                ・小型・低コスト<br><br>
+                                <strong>欠点：</strong><br>
+                                ・SoCとの通信に遅延が発生<br>
+                                ・消費電力が大きい（別チップのため）<br>
+                                ・基板面積が必要<br>
+                                ・コストが追加される<br><br>
+                                <strong>【統合SoCとの比較】</strong><br>
+                                統合SoCでは、Wi-Fi機能がSoC内部に実装されるため、Wi-Fiモジュールが不要になる。これにより、遅延の削減、消費電力の削減、コスト削減、小型化が実現される。
+                            </div>
+                            <br>
+                            <strong>② 通信インターフェース：</strong><br>
+                            ・SoCと無線通信モジュールの間は、UART、SPI、I2Cなどのシリアル通信で接続<br>
+                            ・通信速度が制限され、リアルタイム性に課題<br>
+                            ・プロトコルスタック（TCP/IP、Wi-Fi、Bluetooth）の処理が別チップで実行されるため、遅延が発生<br>
+                            ・データ転送にCPUリソースを消費<br><br>
+                            <div class="note">
+                                <strong>【通信プロトコルとは】</strong><br>
+                                通信プロトコル（Protocol）は、デバイス間でデータを送受信する際の「約束事」や「ルール」のこと。異なるメーカーのデバイスでも、同じプロトコルを使用すれば通信可能になる。<br><br>
+                                <strong>【プロトコルの階層構造（OSI参照モデル）】</strong><br>
+                                通信プロトコルは、通常7層の階層構造で構成される（OSI参照モデル）：<br><br>
+                                <div class="note">
+                                    <strong>OSI参照モデルの7層の詳細解説</strong><br><br>
+                                    OSI参照モデル（Open Systems Interconnection Reference Model）は、1977年にISO（International Organization for Standardization：国際標準化機構）が制定した、通信プロトコルの階層構造を定義したモデル。異なるメーカーのデバイス間でも通信可能にするための標準化を目的としている。<br><br>
+                                    <strong>【第1層：物理層（Physical Layer）】</strong><br>
+                                    <strong>役割：</strong>電気信号、光信号、電波などの物理的な伝送媒体を通じて、ビット列（0と1）を送受信する。<br><br>
+                                    <strong>主な機能：</strong><br>
+                                    ・ビットの符号化（0と1を電気信号に変換）<br>
+                                    ・信号の送受信<br>
+                                    ・伝送媒体の仕様定義（ケーブル、コネクタ、電圧レベルなど）<br>
+                                    ・同期（送信側と受信側のタイミングを合わせる）<br><br>
+                                    <strong>具体例：</strong><br>
+                                    ・Ethernet：RJ-45コネクタ、ツイストペアケーブル、電圧レベル（0V/3.3V）<br>
+                                    ・Wi-Fi：無線電波（2.4GHz、5GHz帯）、アンテナ、変調方式（OFDMなど）<br>
+                                    ・RS-232C：シリアルケーブル、電圧レベル（-12V/+12V）<br>
+                                    ・光ファイバー：光信号、波長（850nm、1310nm、1550nm）<br><br>
+                                    <strong>【第2層：データリンク層（Data Link Layer）】</strong><br>
+                                    <strong>役割：</strong>物理層で送受信されたビット列を、意味のあるデータ単位（フレーム）にまとめ、同一ネットワーク内での信頼性の高いデータ転送を実現する。<br><br>
+                                    <strong>主な機能：</strong><br>
+                                    ・フレームの作成と分解（ビット列をフレームに分割、フレームをビット列に変換）<br>
+                                    ・エラー検出（CRC：Cyclic Redundancy Checkなど）<br>
+                                    ・フロー制御（送信速度の調整）<br>
+                                    ・MACアドレスの管理（デバイスの識別）<br>
+                                    ・媒体アクセス制御（複数のデバイスが同じ媒体を使用する場合の制御）<br><br>
+                                    <strong>サブレイヤー：</strong><br>
+                                    データリンク層は、さらに2つのサブレイヤーに分かれる：<br>
+                                    ・LLC（Logical Link Control）：上位層とのインターフェース、フロー制御<br>
+                                    ・MAC（Media Access Control）：媒体アクセス制御、MACアドレス管理<br><br>
+                                    <strong>具体例：</strong><br>
+                                    ・Ethernet：MACアドレス（48ビット）、フレーム形式（Ethernet II、802.3）<br>
+                                    ・Wi-Fi（IEEE 802.11）：MACアドレス、CSMA/CA（Carrier Sense Multiple Access with Collision Avoidance）<br>
+                                    ・PPP（Point-to-Point Protocol）：モデム、ISDNなどで使用<br>
+                                    ・HDLC（High-Level Data Link Control）：フレームリレー、ATMなどで使用<br><br>
+                                    <strong>【第3層：ネットワーク層（Network Layer）】</strong><br>
+                                    <strong>役割：</strong>異なるネットワーク間でのデータ転送を実現。パケットのルーティング（経路選択）を担当。<br><br>
+                                    <strong>主な機能：</strong><br>
+                                    ・ルーティング（最適な経路の選択）<br>
+                                    ・パケットの分割と再構成<br>
+                                    ・IPアドレスの管理<br>
+                                    ・フラグメンテーション（大きなパケットの分割）<br><br>
+                                    <strong>具体例：</strong><br>
+                                    ・IP（Internet Protocol）：IPv4、IPv6<br>
+                                    ・ICMP（Internet Control Message Protocol）：エラー通知、pingなど<br>
+                                    ・ARP（Address Resolution Protocol）：IPアドレスからMACアドレスへの変換<br><br>
+                                    <strong>【第4層：トランスポート層（Transport Layer）】</strong><br>
+                                    <strong>役割：</strong>エンドツーエンド（送信側と受信側）での信頼性の高いデータ転送を実現。<br><br>
+                                    <strong>主な機能：</strong><br>
+                                    ・コネクションの確立・維持・終了<br>
+                                    ・エラー検出・訂正<br>
+                                    ・再送制御<br>
+                                    ・フロー制御（送信速度の調整）<br>
+                                    ・輻輳制御（ネットワークの混雑に応じた送信速度の調整）<br>
+                                    ・ポート番号によるアプリケーションの識別<br><br>
+                                    <strong>具体例：</strong><br>
+                                    ・TCP（Transmission Control Protocol）：信頼性重視、コネクション型<br>
+                                    ・UDP（User Datagram Protocol）：速度重視、コネクションレス型<br>
+                                    ・SCTP（Stream Control Transmission Protocol）：マルチストリーム対応<br><br>
+                                    <strong>【第5層：セッション層（Session Layer）】</strong><br>
+                                    <strong>役割：</strong>アプリケーション間の通信セッション（対話）の確立・維持・終了を管理。<br><br>
+                                    <strong>主な機能：</strong><br>
+                                    ・セッションの確立・維持・終了<br>
+                                    ・セッションの同期（チェックポイント、ロールバック）<br>
+                                    ・ダイアログ制御（半二重、全二重通信の制御）<br><br>
+                                    <strong>具体例：</strong><br>
+                                    ・SSL/TLS（Secure Sockets Layer/Transport Layer Security）：セキュアなセッション確立<br>
+                                    ・NetBIOS：Windowsネットワークで使用<br>
+                                    ・RPC（Remote Procedure Call）：リモートプロシージャコール<br><br>
+                                    <strong>【第6層：プレゼンテーション層（Presentation Layer）】</strong><br>
+                                    <strong>役割：</strong>データの形式変換（エンコード、デコード、暗号化、圧縮など）を担当。<br><br>
+                                    <strong>主な機能：</strong><br>
+                                    ・データ形式の変換（文字コード、数値表現など）<br>
+                                    ・データ圧縮・展開<br>
+                                    ・暗号化・復号化<br>
+                                    ・データ構造の変換<br><br>
+                                    <strong>具体例：</strong><br>
+                                    ・文字コード変換：ASCII、UTF-8、Shift-JISなど<br>
+                                    ・画像形式：JPEG、PNG、GIFなど<br>
+                                    ・動画形式：MPEG、H.264、H.265など<br>
+                                    ・暗号化：AES、RSA、TLSなど<br><br>
+                                    <strong>【第7層：アプリケーション層（Application Layer）】</strong><br>
+                                    <strong>役割：</strong>アプリケーション固有のプロトコルを定義。ユーザーが直接利用するサービスを提供。<br><br>
+                                    <strong>主な機能：</strong><br>
+                                    ・アプリケーション間の通信プロトコルの定義<br>
+                                    ・ユーザーインターフェースの提供<br>
+                                    ・アプリケーション固有のサービス<br><br>
+                                    <strong>具体例：</strong><br>
+                                    ・HTTP/HTTPS：Webブラウジング<br>
+                                    ・FTP：ファイル転送<br>
+                                    ・SMTP/POP3/IMAP：電子メール<br>
+                                    ・DNS：ドメイン名解決<br>
+                                    ・MQTT：IoT向け通信<br>
+                                    ・SNMP：ネットワーク管理<br><br>
+                                    <strong>【OSI参照モデルの利点】</strong><br>
+                                    <strong>① 標準化：</strong><br>
+                                    異なるメーカーのデバイス間でも、同じプロトコルを使用すれば通信可能。<br><br>
+                                    <strong>② モジュール化：</strong><br>
+                                    各層が独立して実装・変更可能。例：物理層を変更しても、上位層は影響を受けない。<br><br>
+                                    <strong>③ 開発の効率化：</strong><br>
+                                    各層の役割が明確なため、開発が効率的。<br><br>
+                                    <strong>④ 教育・理解の容易さ：</strong><br>
+                                    通信プロトコルを体系的に理解できる。<br><br>
+                                    <strong>【OSI参照モデルとTCP/IPモデルの対応】</strong><br>
+                                    TCP/IPモデルは、OSI参照モデルの7層を簡略化した4層モデル：<br>
+                                    ・アプリケーション層（OSIの5-7層）<br>
+                                    ・トランスポート層（OSIの4層）<br>
+                                    ・インターネット層（OSIの3層）<br>
+                                    ・リンク層（OSIの1-2層）
+                                </div>
+                                <br>
+                                <strong>① 物理層（Physical Layer）：</strong><br>
+                                電気信号、光信号などの物理的な伝送媒体。例：電圧レベル、ケーブル仕様<br><br>
+                                <strong>② データリンク層（Data Link Layer）：</strong><br>
+                                同一ネットワーク内でのデータ転送。例：Ethernet、Wi-Fi（MAC層）<br><br>
+                                <strong>③ ネットワーク層（Network Layer）：</strong><br>
+                                異なるネットワーク間でのデータ転送。例：IP（Internet Protocol）<br><br>
+                                <strong>④ トランスポート層（Transport Layer）：</strong><br>
+                                信頼性の高いデータ転送。例：TCP（信頼性重視）、UDP（速度重視）<br><br>
+                                <strong>⑤ セッション層（Session Layer）：</strong><br>
+                                通信セッションの確立・維持・終了。例：SSL/TLS<br><br>
+                                <strong>⑥ プレゼンテーション層（Presentation Layer）：</strong><br>
+                                データの形式変換（エンコード、暗号化など）。例：JPEG、MPEG、暗号化<br><br>
+                                <strong>⑦ アプリケーション層（Application Layer）：</strong><br>
+                                アプリケーション固有のプロトコル。例：HTTP、HTTPS、FTP、MQTT<br><br>
+                                <strong>【プロトコルスタックとは】</strong><br>
+                                プロトコルスタックは、複数のプロトコル層を積み重ねた構造。例：Wi-Fi通信の場合、以下のようなスタックになる：<br>
+                                ・アプリケーション層：HTTP、MQTTなど<br>
+                                ・トランスポート層：TCP、UDP<br>
+                                ・ネットワーク層：IP<br>
+                                ・データリンク層：Wi-Fi（IEEE 802.11）<br>
+                                ・物理層：無線電波（2.4GHz、5GHz帯）<br><br>
+                                <div class="note">
+                                    <strong>プロトコルスタックの詳細解説</strong><br><br>
+                                    <strong>【プロトコルスタックの概念】</strong><br>
+                                    プロトコルスタック（Protocol Stack）は、通信プロトコルを階層的に積み重ねた構造。各層が特定の機能を担当し、上位層は下位層の機能を利用する。これにより、複雑な通信処理を、階層ごとに分離して実装できる。<br><br>
+                                    <strong>【プロトコルスタックの利点】</strong><br>
+                                    <strong>① モジュール化：</strong><br>
+                                    各層が独立して実装・変更可能。例：物理層を変更しても、上位層は影響を受けない。<br><br>
+                                    <strong>② 再利用性：</strong><br>
+                                    同じプロトコルスタックを、異なるアプリケーションで再利用可能。<br><br>
+                                    <strong>③ 標準化：</strong><br>
+                                    各層のインターフェースが標準化されているため、異なるメーカーのデバイスでも通信可能。<br><br>
+                                    <strong>【データの流れ（カプセル化）】</strong><br>
+                                    データは上位層から下位層へと送られ、各層でヘッダー（制御情報）が追加される（カプセル化）。受信側では、下位層から上位層へとデータが渡され、各層でヘッダーが取り除かれる（デカプセル化）。<br><br>
+                                    <strong>例：HTTPリクエストの送信</strong><br>
+                                    ① アプリケーション層：HTTPリクエストデータを作成<br>
+                                    ② トランスポート層：TCPヘッダーを追加（ポート番号など）<br>
+                                    ③ ネットワーク層：IPヘッダーを追加（IPアドレスなど）<br>
+                                    ④ データリンク層：Ethernetヘッダーを追加（MACアドレスなど）<br>
+                                    ⑤ 物理層：電気信号に変換して送信<br><br>
+                                    <strong>【Wi-Fiプロトコルスタックの詳細】</strong><br>
+                                    <strong>① 物理層（PHY）：</strong><br>
+                                    IEEE 802.11規格に基づく無線電波の送受信。変調方式（OFDM、DSSSなど）を実装。<br><br>
+                                    <strong>② データリンク層（MAC）：</strong><br>
+                                    Media Access Control。フレームの送受信、エラー検出、再送制御などを担当。<br><br>
+                                    <strong>③ ネットワーク層（IP）：</strong><br>
+                                    Internet Protocol。パケットのルーティング、IPアドレスの管理を担当。<br><br>
+                                    <strong>④ トランスポート層（TCP/UDP）：</strong><br>
+                                    Transmission Control Protocol / User Datagram Protocol。信頼性の高い通信（TCP）または高速通信（UDP）を提供。<br><br>
+                                    <strong>⑤ アプリケーション層：</strong><br>
+                                    HTTP、HTTPS、MQTT、FTPなどのアプリケーション固有のプロトコル。<br><br>
+                                    <strong>【プロトコルスタックの実装場所】</strong><br>
+                                    <strong>① ハードウェア実装：</strong><br>
+                                    物理層、データリンク層の一部は、専用IC（Wi-Fiチップ）で実装されることが多い。高速処理が必要なため。<br><br>
+                                    <strong>② ソフトウェア実装：</strong><br>
+                                    上位層（ネットワーク層、トランスポート層、アプリケーション層）は、通常ソフトウェア（ファームウェア、OS）で実装される。<br><br>
+                                    <strong>③ 統合SoC：</strong><br>
+                                    統合SoCでは、プロトコルスタックの大部分がSoC内部で実装されるため、処理が高速化され、消費電力も削減される。
+                                </div>
+                                <br>
+                                <strong>【産業用通信プロトコル】</strong><br>
+                                <strong>・Modbus：</strong><br>
+                                産業用のシリアル通信プロトコル。PLC（プログラマブルロジックコントローラ）との通信に広く使用。シンプルで信頼性が高い。<br><br>
+                                <strong>・Profibus：</strong><br>
+                                ドイツで開発された産業用フィールドバス。製造業で広く使用。高速で、リアルタイム性に優れている。<br><br>
+                                <strong>・MQTT（Message Queuing Telemetry Transport）：</strong><br>
+                                IoT向けの軽量通信プロトコル。低帯域幅、低消費電力の環境に適している。水位計などのIoTデバイスで広く使用。<br><br>
+                                <strong>【水位計における通信プロトコル】</strong><br>
+                                ・物理層：無線電波（Wi-Fi、LPWA）、有線（RS-485、Ethernet）<br>
+                                ・ネットワーク層：IP（IPv4、IPv6）<br>
+                                ・トランスポート層：TCP（信頼性重視）、UDP（リアルタイム性重視）<br>
+                                ・アプリケーション層：MQTT（IoT向け）、HTTP/HTTPS（Webアクセス）、Modbus（産業用）<br>
+                            </div>
+                            <br>
+                            <div class="note">
+                                <strong>【UART、SPI、I2Cとは】</strong><br>
+                                <strong>・UART（Universal Asynchronous Receiver/Transmitter：汎用非同期送受信機）：</strong><br>
+                                非同期シリアル通信プロトコル。2本の信号線（TX：送信、RX：受信）で双方向通信を実現。特徴：<br>
+                                ・通信速度：9600bps～115200bps（一般的）、最大数Mbps（高速UART）<br>
+                                ・接続：2本の信号線 + グラウンド（GND）<br>
+                                ・用途：デバッグ、シンプルなデータ転送、GPSモジュールとの接続など<br>
+                                ・利点：シンプル、低コスト、実装が容易<br>
+                                ・欠点：通信速度が遅い、エラーチェック機能が限定的<br>
+                                ・例：水位計では、SoCとWi-Fiモジュール間の初期設定やデバッグ情報の送受信に使用<br><br>
+                                <strong>・SPI（Serial Peripheral Interface：シリアル周辺機器インターフェース）：</strong><br>
+                                同期シリアル通信プロトコル。マスター-スレーブ方式で、複数のスレーブデバイスを制御可能。特徴：<br>
+                                ・通信速度：1Mbps～数十Mbps（高速）<br>
+                                ・接続：4本以上の信号線（MOSI：マスター出力/スレーブ入力、MISO：マスター入力/スレーブ出力、SCK：クロック、CS：チップセレクト）<br>
+                                ・用途：高速データ転送、ADC、DAC、フラッシュメモリとの接続など<br>
+                                ・利点：高速、フルデュプレックス（双方向同時通信）、複数デバイス対応<br>
+                                ・欠点：信号線が多い、距離が長いとノイズの影響を受けやすい<br>
+                                ・例：水位計では、SoCと高速ADC間のデータ転送に使用<br><br>
+                                <strong>・I2C（Inter-Integrated Circuit：アイ・スクエア・シー）：</strong><br>
+                                同期シリアル通信プロトコル。マルチマスター・マルチスレーブ方式で、バス上に複数のデバイスを接続可能。特徴：<br>
+                                ・通信速度：100kHz（標準）、400kHz（高速）、3.4MHz（超高速）<br>
+                                ・接続：2本の信号線（SDA：データ線、SCL：クロック線）+ プルアップ抵抗<br>
+                                ・用途：センサー、EEPROM、リアルタイムクロック（RTC）との接続など<br><br>
+                                <div class="note">
+                                    <strong>【EEPROMとは】</strong><br>
+                                    EEPROM（Electrically Erasable Programmable Read-Only Memory：電気的に消去可能なプログラマブル読み取り専用メモリ）は、電源を切ってもデータが保持される不揮発性メモリの一種。書き込み・消去が電気的に可能。<br><br>
+                                    <strong>【EEPROMの特徴】</strong><br>
+                                    <strong>① 不揮発性：</strong><br>
+                                    電源を切ってもデータが保持される。RAM（揮発性メモリ）とは異なり、再起動後もデータが残る。<br><br>
+                                    <strong>② 書き込み・消去可能：</strong><br>
+                                    電気的にデータを書き込み・消去できる。ROM（Read-Only Memory）とは異なり、何度でも書き換え可能（通常、10万回～100万回）。<br><br>
+                                    <strong>③ バイト単位での書き込み：</strong><br>
+                                    Flashメモリと異なり、バイト単位で書き込み・消去が可能。小容量データの保存に適している。<br><br>
+                                    <strong>【EEPROMの用途】</strong><br>
+                                    <strong>① 設定データの保存：</strong><br>
+                                    デバイスの設定パラメータ（IPアドレス、Wi-Fi設定、校正値など）を保存。<br><br>
+                                    <strong>② キャリブレーションデータ：</strong><br>
+                                    センサーの校正データ、オフセット値などを保存。<br><br>
+                                    <strong>③ ログデータ：</strong><br>
+                                    小容量のログデータ（エラー履歴、イベント記録など）を保存。<br><br>
+                                    <strong>【水位計におけるEEPROMの使用例】</strong><br>
+                                    ・水位計の校正値（オフセット、ゲイン）<br>
+                                    ・Wi-Fi設定（SSID、パスワード）<br>
+                                    ・計測パラメータ（サンプリング周波数、フィルタ設定）<br>
+                                    ・エラー履歴（最後の10件程度）<br><br>
+                                    <strong>【EEPROMとFlashメモリの比較】</strong><br>
+                                    <table style="width:100%; border-collapse: collapse; margin: 10px 0;">
+                                    <tr style="background-color: #f0f7ff;">
+                                        <th style="border: 1px solid #ddd; padding: 8px;">項目</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">EEPROM</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">Flashメモリ</th>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">容量</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">小容量（数KB～数MB）</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">大容量（数MB～数GB）</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">書き込み単位</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">バイト単位</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">ブロック単位</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">用途</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">設定データ、小容量データ</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">プログラム、大容量データ</td>
+                                    </tr>
+                                    </table>
+                                    <br>
+                                    <strong>【リアルタイムクロック（RTC）とは】</strong><br>
+                                    RTC（Real-Time Clock）は、電源を切っても動作し続ける時計機能を持つIC。バッテリー（ボタン電池など）で駆動され、正確な日時を保持する。<br><br>
+                                    <strong>【RTCの特徴】</strong><br>
+                                    <strong>① 低消費電力：</strong><br>
+                                    バッテリー駆動で、数年間動作可能。通常、数マイクロアンペアの消費電流。<br><br>
+                                    <strong>② 高精度：</strong><br>
+                                    水晶発振器を使用し、月間誤差が数秒～数十秒程度の高精度を実現。<br><br>
+                                    <strong>③ 不揮発性：</strong><br>
+                                    メイン電源を切っても、バッテリーで動作し続けるため、時刻が保持される。<br><br>
+                                    <strong>【RTCの機能】</strong><br>
+                                    <strong>① 日時保持：</strong><br>
+                                    年、月、日、時、分、秒を保持。うるう年も自動計算。<br><br>
+                                    <strong>② アラーム機能：</strong><br>
+                                    指定した時刻に割り込みを発生。定期的な処理のトリガーとして使用。<br><br>
+                                    <strong>③ タイマー機能：</strong><br>
+                                    指定した時間後に割り込みを発生。<br><br>
+                                    <strong>【水位計におけるRTCの使用例】</strong><br>
+                                    <strong>① タイムスタンプ：</strong><br>
+                                    水位データに正確な時刻を付与。データの時系列解析に必要。<br><br>
+                                    <strong>② 定期計測：</strong><br>
+                                    RTCのアラーム機能を使用して、定期的に水位を計測（例：1時間ごと）。省電力化に貢献。<br><br>
+                                    <strong>③ イベント記録：</strong><br>
+                                    エラー発生時、異常検知時の正確な時刻を記録。<br><br>
+                                    <strong>④ スケジュール制御：</strong><br>
+                                    時刻に応じて動作モードを変更（例：夜間は省電力モード）。<br><br>
+                                    <strong>【RTCの通信インターフェース】</strong><br>
+                                    RTCは通常、I2CまたはSPIでSoCと接続される。I2Cが一般的で、2本の信号線で接続可能なため、基板設計が簡素化される。
+                                </div>
+                                <br>
+                                ・利点：信号線が少ない（2本）、複数デバイス対応、アドレス指定可能<br>
+                                ・欠点：通信速度がSPIより遅い、バス長が制限される（通常数メートル以内）<br>
+                                ・例：水位計では、SoCと温度センサー、湿度センサーなどの接続に使用<br><br>
+                                <strong>【比較表】</strong><br>
+                                <table style="width:100%; border-collapse: collapse; margin: 10px 0;">
+                                <tr style="background-color: #f0f7ff;">
+                                    <th style="border: 1px solid #ddd; padding: 8px;">項目</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">UART</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">SPI</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px;">I2C</th>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">通信速度</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">低速～中速</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">高速</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">中速</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">信号線数</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">2本</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">4本以上</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">2本</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">通信方式</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">非同期</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">同期</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">同期</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">複数デバイス</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">困難</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">可能（CS線で制御）</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">可能（アドレス指定）</td>
+                                </tr>
+                                </table>
+                            </div>
+                            <br>
+                            <strong>③ 消費電力：</strong><br>
+                            ・複数のチップが動作するため、消費電力が大きい<br>
+                            ・チップ間の通信にも電力が必要<br>
+                            ・バッテリー駆動が困難で、電源ケーブルが必要な場合が多い<br>
+                            ・例：1990年代の水位計は、AC電源が必要で、バッテリー駆動は不可能だった<br><br>
+                            <strong>④ コスト：</strong><br>
+                            ・複数のチップを購入する必要があるため、部品コストが高い<br>
+                            ・基板設計が複雑になり、製造コストも増加<br>
+                            ・例：SoCが$10、Wi-Fiモジュールが$5、Bluetoothモジュールが$3の場合、合計$18<br><br>
+                            <strong>⑤ 開発の複雑さ：</strong><br>
+                            ・複数のチップのドライバーを開発・統合する必要がある<br>
+                            ・チップ間の通信プロトコルを設計する必要がある<br>
+                            ・デバッグが困難（複数のチップで問題が発生する可能性）<br>
+                            ・例：Wi-Fiモジュールとの通信でエラーが発生した場合、SoC側の問題か、Wi-Fiモジュール側の問題かを特定するのが困難<br><br>
+                            <div class="note">
+                                <strong>【ドライバーとは】</strong><br>
+                                ドライバー（Driver）は、ハードウェア（チップ、デバイス）を制御するためのソフトウェア。OSやアプリケーションとハードウェアの間の橋渡し役を担う。<br><br>
+                                <strong>【ドライバーの役割】</strong><br>
+                                <strong>① ハードウェアの抽象化：</strong><br>
+                                ハードウェアの詳細を隠蔽し、統一的なインターフェースを提供。アプリケーションは、ハードウェアの詳細を知らなくても使用可能。<br><br>
+                                <strong>② ハードウェアの制御：</strong><br>
+                                レジスタの読み書き、割り込み処理、DMA（Direct Memory Access）制御など、ハードウェアを直接制御。<br><br>
+                                <strong>③ エラーハンドリング：</strong><br>
+                                ハードウェアのエラーを検出し、適切に処理。アプリケーションにエラー情報を通知。<br><br>
+                                <strong>④ リソース管理：</strong><br>
+                                ハードウェアリソース（メモリ、割り込み、DMAチャネルなど）の割り当てと管理。<br><br>
+                                <strong>【ドライバーの種類】</strong><br>
+                                <strong>① カーネルドライバー：</strong><br>
+                                OSのカーネル空間で動作するドライバー。高い権限を持ち、ハードウェアに直接アクセス可能。例：Linuxカーネルドライバー、Windowsカーネルドライバー。<br><br>
+                                <strong>② ユーザー空間ドライバー：</strong><br>
+                                アプリケーションと同じユーザー空間で動作するドライバー。安全性が高いが、性能はやや劣る。例：USBデバイスの一部。<br><br>
+                                <strong>③ ファームウェア：</strong><br>
+                                ハードウェアに内蔵されたソフトウェア。デバイス自体が持つ制御プログラム。例：Wi-Fiモジュールのファームウェア。<br><br>
+                                <strong>【ドライバーの開発プロセス】</strong><br>
+                                <strong>① ハードウェア仕様の理解：</strong><br>
+                                チップのデータシートを読み、レジスタマップ、通信プロトコル、タイミング仕様などを理解。<br><br>
+                                <strong>② インターフェースの設計：</strong><br>
+                                アプリケーションから呼び出す関数（API）を設計。例：`wifi_init()`, `wifi_send()`, `wifi_receive()`など。<br><br>
+                                <strong>③ 実装：</strong><br>
+                                レジスタの読み書き、割り込み処理、エラーハンドリングなどを実装。<br><br>
+                                <strong>④ テスト：</strong><br>
+                                単体テスト、統合テスト、負荷テストなどを実施。<br><br>
+                                <strong>【統合前後のドライバー開発の違い】</strong><br>
+                                <strong>統合以前：</strong><br>
+                                ・SoC用ドライバー、Wi-Fiモジュール用ドライバー、Bluetoothモジュール用ドライバーを個別に開発<br>
+                                ・各ドライバー間の通信プロトコルも設計・実装する必要がある<br>
+                                ・開発工数：3-6ヶ月<br>
+                                ・デバッグ：複数のドライバーで問題が発生する可能性があり、原因特定が困難<br><br>
+                                <strong>統合以後：</strong><br>
+                                ・統合SoC用のドライバーを1つ開発すれば良い<br>
+                                ・SoC内部で通信プロトコルが最適化されているため、開発が簡素化<br>
+                                ・開発工数：1-2ヶ月<br>
+                                ・デバッグ：1つのドライバーで問題を特定可能<br><br>
+                                <strong>【水位計におけるドライバーの例】</strong><br>
+                                <strong>① ADCドライバー：</strong><br>
+                                アナログ-デジタル変換器を制御。サンプリング周波数の設定、データの読み取りなどを担当。<br><br>
+                                <strong>② Wi-Fiドライバー：</strong><br>
+                                Wi-Fiチップを制御。接続、データ送受信、設定変更などを担当。<br><br>
+                                <strong>③ LPWAドライバー：</strong><br>
+                                LPWA通信チップを制御。LoRaWAN、Sigfoxなどのプロトコルを実装。<br><br>
+                                <strong>④ RTCドライバー：</strong><br>
+                                リアルタイムクロックを制御。時刻の読み書き、アラーム設定などを担当。<br><br>
+                                <strong>⑤ EEPROMドライバー：</strong><br>
+                                EEPROMを制御。設定データの読み書きを担当。
+                            </div>
+                            <br>
+                            <strong>⑥ 信頼性：</strong><br>
+                            ・複数のチップがあるため、故障の可能性が高い<br>
+                            ・チップ間の接続（はんだ付け、コネクタ）が故障の原因となる<br>
+                            ・例：基板の振動により、チップ間の接続が断線する可能性<br><br>
+                            <strong>【統合以後（2000年代後半～現在）】</strong><br>
+                            <strong>① システム構成：</strong><br>
+                            ・CPU、メモリ、DSP、無線通信機能が1つのSoCに統合<br>
+                            ・基板面積が大幅に削減され、デバイスの小型化が可能<br>
+                            ・例：水位計では、1つのSoCチップで全ての機能を実現。基板サイズが50%以上削減<br><br>
+                            <strong>② 通信インターフェース：</strong><br>
+                            ・SoC内部で直接通信するため、高速な内部バスで接続<br>
+                            ・通信速度が大幅に向上（例：内部バスは数Gbps、外部シリアル通信は数Mbps）<br>
+                            ・プロトコルスタックの処理がSoC内部で実行されるため、遅延が最小化<br>
+                            ・データ転送が効率的で、CPUリソースの消費が削減<br>
+                            ・例：Wi-Fiデータの送信が、統合前は数ミリ秒かかっていたが、統合後は数百マイクロ秒で完了<br><br>
+                            <strong>③ 消費電力：</strong><br>
+                            ・1つのチップで動作するため、消費電力が大幅に削減（約30-50%削減）<br>
+                            ・チップ間通信が不要になり、その分の電力も削減<br>
+                            ・統合により、省電力制御が最適化され、スリープモードの効率が向上<br>
+                            ・バッテリー駆動が実現可能に<br>
+                            ・例：統合前はAC電源が必要だったが、統合後は乾電池で数ヶ月動作可能に<br><br>
+                            <strong>④ コスト：</strong><br>
+                            ・1つのSoCで全ての機能を実現するため、部品コストが削減（約40-60%削減）<br>
+                            ・基板設計が簡素化され、製造コストも削減<br>
+                            ・例：統合前は$18だった部品コストが、統合後は$8-10に削減<br><br>
+                            <strong>⑤ 開発の簡素化：</strong><br>
+                            ・1つのSoCのドライバーを開発すれば良い<br>
+                            ・SoC内部で通信プロトコルが最適化されているため、開発工数が削減<br>
+                            ・デバッグが容易（1つのチップで問題を特定可能）<br>
+                            ・統合開発環境（IDE）が提供され、開発効率が向上<br>
+                            ・例：統合前は3-6ヶ月かかっていた開発が、統合後は1-2ヶ月に短縮<br><br>
+                            <strong>⑥ 信頼性：</strong><br>
+                            ・1つのチップで動作するため、故障の可能性が低減<br>
+                            ・チップ間の接続が不要になり、接続不良のリスクがゼロ<br>
+                            ・SoC内部の通信は、外部ノイズの影響を受けにくい<br>
+                            ・例：統合前は年間故障率が2-3%だったが、統合後は0.5%以下に改善<br><br>
+                            <strong>【統合による新たな可能性】</strong><br>
+                            <strong>① IoTデバイスの普及：</strong><br>
+                            ・小型化・低コスト化により、IoTデバイスが大量に普及可能に<br>
+                            ・バッテリー駆動により、電源ケーブル不要で設置可能<br>
+                            ・例：水位計を山間部の複数地点に設置し、無線で集中監視が可能に<br><br>
+                            <strong>② エッジコンピューティング：</strong><br>
+                            ・SoC内部で通信と処理を同時実行可能<br>
+                            ・クラウドに依存せず、現場でデータ処理・判断が可能<br>
+                            ・例：水位計が現場で異常を検知し、即座に警告を送信<br><br>
+                            <strong>③ マルチプロトコル対応：</strong><br>
+                            ・1つのSoCで複数の無線通信プロトコル（Wi-Fi、Bluetooth、LPWAなど）に対応可能<br>
+                            ・用途に応じて最適な通信方式を選択可能<br>
+                            ・例：水位計が、近距離ではWi-Fi、長距離ではLPWA（LoRaWAN）を使用<br><br>
+                            <strong>④ セキュリティ強化：</strong><br>
+                            ・SoC内部で暗号化・認証を実行可能<br>
+                            ・通信データがSoC内部で処理されるため、外部からの攻撃が困難<br>
+                            ・例：水位データがSoC内部で暗号化され、安全に送信<br><br>
+                            <strong>【水位計における具体的な変化】</strong><br>
+                            <strong>統合以前（1990年代～2000年代前半）：</strong><br>
+                            ・システム構成：SoC + Wi-Fiモジュール + 有線通信モジュール（RS-485）<br>
+                            ・設置：AC電源が必要、電源ケーブルと通信ケーブルを敷設<br>
+                            ・コスト：高価（部品コスト$20-30、設置コストも高い）<br>
+                            ・運用：定期的なメンテナンスが必要、故障時の対応が困難<br><br>
+                            <strong>統合以後（2000年代後半～現在）：</strong><br>
+                            ・システム構成：統合SoC（CPU + DSP + Wi-Fi + LPWA）<br>
+                            ・設置：バッテリー駆動、無線通信のみで設置可能<br>
+                            ・コスト：低コスト（部品コスト$8-12、設置コストも大幅に削減）<br>
+                            ・運用：メンテナンスフリー、遠隔監視・診断が可能<br><br>
+                            <strong>【今後の展望】</strong><br>
+                            ・5G/6G通信の統合：次世代移動通信がSoCに統合され、超高速・低遅延通信が可能に<br>
+                            ・衛星通信の統合：Starlinkなどの低軌道衛星通信がSoCに統合され、地球上のどこでも通信可能に<br>
+                            ・量子通信の統合：将来、量子暗号通信がSoCに統合され、完全なセキュリティが実現<br>
+                            ・統合のさらなる進化：AI、センサー、通信が完全に統合された「超統合SoC」が実現<br><br>
+                            <strong>【結論】</strong><br>
+                            SoCが無線通信と統合されたことで、システム構成が簡素化され、小型化・低コスト化・省電力化が実現した。これにより、IoTデバイスが大量に普及し、エッジコンピューティングが可能になった。水位計においても、統合により、バッテリー駆動による無線監視システムが実現し、設置コストと運用コストが大幅に削減された。今後も、統合はさらに進化し、5G/6G、衛星通信などが統合されることで、より高度なアプリケーションが実現される。
+                        </p>
+                    </div>
+                    
+                    <div class="note">
+                        <strong>DSP（デジタル信号処理：Digital Signal Processing）とは：</strong><br>
+                        DSPは、アナログ信号（連続的な波形）をデジタル信号（0と1の離散値）に変換し、数学的演算によって信号を加工・解析する技術。水位計におけるDSPの役割は以下の通り：<br><br>
+                        <strong>【アナログ信号とデジタル信号の違い】</strong><br>
+                        <strong>・アナログ信号：</strong><br>
+                        連続的な値を持つ信号。時間軸上で滑らかに変化し、任意の時点で無限に細かい値が存在する。例：アンテナが受信した電磁波の電圧値は、時間とともに連続的に変化する。グラフにすると滑らかな曲線になる。<br><br>
+                        <strong>・デジタル信号：</strong><br>
+                        離散的な値（0と1、または数値）で表現された信号。時間軸上で一定間隔（サンプリング周期）ごとに値を取得し、各値を有限のビット数で表現する。例：ADCで変換されたデータは、時間軸上で等間隔に並んだ数値列（例：1024個の数値）になる。<br><br>
+                        <strong>【具体例】</strong><br>
+                        アナログ信号：時間 $t$ における電圧 $V(t) = 2.5 \sin(2\pi \cdot 1000t) + 0.3$（連続的）<br>
+                        デジタル信号：$t = 0, 0.001, 0.002, ...$ 秒における値 $V[0] = 2.5, V[1] = 2.8, V[2] = 2.3, ...$（離散的）<br><br>
+                        <strong>【アナログからデジタルへの変換の利点】</strong><br>
+                        ① ノイズ耐性：デジタル信号は0と1で表現されるため、小さなノイズの影響を受けにくい<br>
+                        ② 複製性：デジタルデータは劣化なく複製可能<br>
+                        ③ 処理の柔軟性：コンピュータで様々な数学的演算を実行可能<br>
+                        ④ 圧縮・保存：データを効率的に圧縮し、保存できる<br>
+                        ⑤ 伝送：デジタル通信により、長距離でも劣化なく伝送可能<br><br>
+                        <strong>【離散的とは】</strong><br>
+                        「離散的」とは、連続的でなく、とびとびの値を持つことを意味する。デジタル信号は離散的であるため、以下の特徴がある：<br><br>
+                        ① 時間的に離散的：連続的な時間軸ではなく、一定間隔（サンプリング周期）ごとに値を取得<br>
+                        例：1秒間に1000回サンプリング（サンプリング周波数1kHz）の場合、0.001秒ごとに値を取得<br><br>
+                        ② 値が離散的：連続的な実数値ではなく、有限のビット数で表現された数値<br>
+                        例：16ビットADCの場合、$2^{16} = 65536$通りの値しか表現できない（0～65535の整数）<br><br>
+                        ③ 量子化誤差：アナログ信号の連続的な値を、離散的な数値に変換する際に生じる誤差<br>
+                        例：実際の電圧が2.345Vでも、16ビットADCでは2.345Vに最も近い離散値（例：2.344V）に変換される<br><br>
+                        <strong>【サンプリング定理（ナイキスト・シャノンのサンプリング定理）】</strong><br>
+                        アナログ信号を正確にデジタル化するには、サンプリング周波数が信号の最高周波数の2倍以上である必要がある（ナイキスト周波数）。例：100kHzの信号を正確にデジタル化するには、サンプリング周波数は200kHz以上が必要。<br><br>
+                        <div class="note">
+                            <strong>サンプリング定理の詳細解説</strong><br><br>
+                            <strong>【定理の内容】</strong><br>
+                            サンプリング定理（Nyquist-Shannon Sampling Theorem）は、1928年にハリー・ナイキスト、1949年にクロード・シャノンによって確立された。内容は以下の通り：<br><br>
+                            「帯域制限された連続信号を、その信号に含まれる最高周波数成分の2倍以上の周波数でサンプリングすれば、元の信号を完全に復元できる」<br><br>
+                            <strong>【数学的表現】</strong><br>
+                            信号の最高周波数を $f_{max}$、サンプリング周波数を $f_s$ とすると：<br><br>
+                            $f_s \geq 2 \cdot f_{max}$<br><br>
+                            この条件を満たすとき、元のアナログ信号を完全に復元可能。$2 \cdot f_{max}$ を「ナイキスト周波数」と呼ぶ。<br><br>
+                            <strong>【具体例】</strong><br>
+                            <strong>例1：音声信号</strong><br>
+                            ・人間の可聴範囲：20Hz～20kHz<br>
+                            ・最高周波数：$f_{max} = 20$ kHz<br>
+                            ・必要なサンプリング周波数：$f_s \geq 2 \times 20 = 40$ kHz<br>
+                            ・実際のCD：44.1kHz（ナイキスト周波数より少し高い）<br><br>
+                            <strong>例2：水位計の信号</strong><br>
+                            ・FMCWレーダーのビート周波数：最大100kHz<br>
+                            ・最高周波数：$f_{max} = 100$ kHz<br>
+                            ・必要なサンプリング周波数：$f_s \geq 2 \times 100 = 200$ kHz<br>
+                            ・実際のサンプリング周波数：500kHz～1MHz（余裕を持たせている）<br><br>
+                            <strong>【エイリアシング（折り返し歪み）とは】</strong><br>
+                            サンプリング周波数がナイキスト周波数未満の場合、エイリアシング（Aliasing）という現象が発生する。これは、高周波成分が低周波成分として誤って認識される現象。<br><br>
+                            <strong>【エイリアシングの例】</strong><br>
+                            ・信号の最高周波数：100kHz<br>
+                            ・サンプリング周波数：150kHz（ナイキスト周波数200kHz未満）<br>
+                            ・結果：100kHzの信号が、$150 - 100 = 50$kHzの信号として誤って認識される<br>
+                            ・この50kHzの誤った信号を「エイリアス」と呼ぶ<br><br>
+                            <strong>【エイリアシングの視覚的理解】</strong><br>
+                            映画で車輪が逆回転して見える現象が、エイリアシングの例。フレームレート（サンプリング周波数）が低いため、実際の回転速度を正確に捉えられず、誤った速度として認識される。<br><br>
+                            <strong>【エイリアシングの防止方法】</strong><br>
+                            <strong>① アンチエイリアシングフィルタ（ローパスフィルタ）：</strong><br>
+                            サンプリング前に、ナイキスト周波数（$f_s/2$）より高い周波数成分を除去する。これにより、エイリアシングを防止。<br>
+                            例：サンプリング周波数が500kHzの場合、250kHzより高い周波数をフィルタで除去<br><br>
+                            <strong>② オーバーサンプリング：</strong><br>
+                            必要以上に高いサンプリング周波数を使用する。例：100kHzの信号に対して、1MHzでサンプリング（10倍のオーバーサンプリング）。これにより、エイリアシングのリスクを大幅に低減。<br><br>
+                            <strong>【実用的な考慮事項】</strong><br>
+                            <strong>① 理想的なサンプリング周波数：</strong><br>
+                            理論的には $f_s = 2 \cdot f_{max}$ で十分だが、実際には以下の理由でより高い周波数を使用：<br>
+                            ・アンチエイリアシングフィルタの特性（完全にシャープなカットオフは不可能）<br>
+                            ・ノイズの影響<br>
+                            ・信号の帯域幅の不確実性<br>
+                            ・一般的には、$f_s = 2.5 \sim 10 \times f_{max}$ が使用される<br><br>
+                            <strong>② 帯域制限の重要性：</strong><br>
+                            サンプリング定理は「帯域制限された信号」に対して成立する。つまり、信号に無限に高い周波数成分が含まれている場合、どのようなサンプリング周波数でも完全な復元は不可能。そのため、アンチエイリアシングフィルタが必須。<br><br>
+                            <strong>③ 量子化誤差との関係：</strong><br>
+                            サンプリング定理は「時間的な離散化」に関する定理。これとは別に、「値の離散化（量子化）」による誤差も存在する。両方の誤差を考慮して、適切なサンプリング周波数とビット数を選択する必要がある。<br><br>
+                            <strong>【水位計におけるサンプリング定理の応用】</strong><br>
+                            <strong>① FMCWレーダーのビート周波数：</strong><br>
+                            ・ビート周波数の範囲：0～100kHz（スウィープ幅100MHz、最大距離150mの場合）<br>
+                            ・最高周波数：$f_{max} = 100$ kHz<br>
+                            ・ナイキスト周波数：$2 \times 100 = 200$ kHz<br>
+                            ・実際のサンプリング周波数：500kHz～1MHz（2.5～5倍のオーバーサンプリング）<br>
+                            ・理由：高精度な計測のため、余裕を持たせている<br><br>
+                            <strong>② アンチエイリアシングフィルタ：</strong><br>
+                            ・サンプリング周波数：500kHz<br>
+                            ・カットオフ周波数：250kHz（ナイキスト周波数）<br>
+                            ・250kHzより高い周波数成分（ノイズ、干渉など）を除去<br>
+                            ・これにより、エイリアシングを防止<br><br>
+                            <strong>③ 距離分解能との関係：</strong><br>
+                            ・サンプリング周波数が高いほど、より細かい時間間隔で信号を取得可能<br>
+                            ・時間分解能が向上すると、距離分解能も向上<br>
+                            ・例：サンプリング周波数1MHzの場合、時間分解能1μs、距離分解能約0.15mm（光速で計算）<br><br>
+                            <strong>【サンプリング定理の歴史的意義】</strong><br>
+                            サンプリング定理は、アナログ信号をデジタル化する際の基本原理。この定理により、以下のことが可能になった：<br>
+                            ・CD、DVDなどのデジタルオーディオ・ビデオ<br>
+                            ・デジタル通信（電話、インターネット）<br>
+                            ・デジタル信号処理（画像処理、音声処理）<br>
+                            ・レーダー、ソナーなどの計測システム<br>
+                            ・医療画像（CT、MRI）<br>
+                            現代のデジタル技術の基礎となっている重要な定理である。
+                        </div>
+                        <br>
+                        <strong>① アナログ-デジタル変換（ADC）：</strong><br>
+                        アンテナが受信した連続的な電磁波信号を、サンプリング周波数（例：100kHz）で離散的な数値列に変換。この変換により、コンピュータが処理可能な形式になる。<br><br>
+                        <strong>② フィルタリング：</strong><br>
+                        不要な周波数成分（ノイズ）を除去。ローパスフィルタ、ハイパスフィルタ、バンドパスフィルタなどを組み合わせて、計測に必要な信号だけを抽出。<br><br>
+                        <strong>【フィルタの種類と役割】</strong><br>
+                        <strong>・ローパスフィルタ（Low-Pass Filter）：</strong><br>
+                        低い周波数成分を通し、高い周波数成分を除去するフィルタ。カットオフ周波数より低い周波数は通過し、高い周波数は減衰させる。用途：高周波ノイズの除去、信号の平滑化。例：水位計では、FFT解析後の高周波ノイズ（電磁干渉など）を除去するために使用。<br><br>
+                        <strong>・ハイパスフィルタ（High-Pass Filter）：</strong><br>
+                        高い周波数成分を通し、低い周波数成分を除去するフィルタ。カットオフ周波数より高い周波数は通過し、低い周波数は減衰させる。用途：直流成分や低周波ドリフトの除去。例：センサーのオフセット電圧や温度ドリフトによる低周波ノイズを除去。<br><br>
+                        <strong>・バンドパスフィルタ（Band-Pass Filter）：</strong><br>
+                        特定の周波数帯域（バンド）のみを通し、それ以外の周波数を除去するフィルタ。低域カットオフ周波数と高域カットオフ周波数の間の周波数帯域のみを通過させる。用途：目的の信号周波数帯域だけを抽出。例：水位計では、水面の反射に対応する周波数帯域（例：0.5MHz～2MHz）だけを抽出し、それ以外のノイズを除去するために使用。<br><br>
+                        <strong>【フィルタの実装方法】</strong><br>
+                        ① アナログフィルタ：抵抗、コンデンサ、コイルなどの受動部品で構成。ADCの前段で使用されることが多い。<br>
+                        ② デジタルフィルタ：ソフトウェアまたはDSPで実装。IIR、FIRなどのアルゴリズムを使用。柔軟性が高く、パラメータを変更しやすい。<br>
+                        ③ 組み合わせ：アナログフィルタで大まかなノイズを除去し、デジタルフィルタで精密な処理を行う。<br><br>
+                        <strong>③ FFT演算：</strong><br>
+                        時間領域の信号を周波数領域に変換。これにより、「どの距離（周波数）に反射があるか」を瞬時に特定できる。<br><br>
+                        <strong>④ ピーク検出：</strong><br>
+                        FFT結果から、最も強い反射（ピーク）を自動検出。これが水面の位置に対応する。<br><br>
+                        <strong>⑤ ノイズ除去：</strong><br>
+                        移動平均、統計的処理により、一時的なノイズ（雨滴、風による反射など）を除去し、安定した水位値を算出。<br><br>
+                        DSPは、専用のハードウェア回路（DSPコア）として実装されることが多く、CPUよりも高速に信号処理を実行できる。特に、FFT演算のような繰り返し計算が多い処理では、DSPの並列処理能力が威力を発揮する。
+                    </div>
+            
+            <h3>① FMCW精密制御</h3>
+            <p>24GHzや77GHzといった極めて高い周波数を、滑らかに（リニアに）上げ下げする「スウィープ制御」を行います。この波形の美しさが、計測の「物差しの精度」そのものとなります。</p>
+                    
+                    <div class="note">
+                        <strong>スウィープ制御とは：</strong><br>
+                        スウィープ（Sweep）とは「掃く」という意味で、周波数を時間とともに滑らかに変化させる制御技術。FMCWレーダーでは、送信周波数を一定の範囲内で連続的に変化させることで、距離測定を実現する。<br><br>
+                        <strong>【スウィープの種類】</strong><br>
+                        <strong>① 上昇スウィープ（Up-Sweep）：</strong><br>
+                        周波数を低い値から高い値へと線形に増加させる。例：24.000GHzから24.100GHzまで、10msかけて滑らかに増加。最も一般的な方式。<br><br>
+                        <strong>② 下降スウィープ（Down-Sweep）：</strong><br>
+                        周波数を高い値から低い値へと線形に減少させる。上昇スウィープと組み合わせて使用することで、精度を向上させる場合がある。<br><br>
+                        <strong>③ 三角波スウィープ（Triangular Sweep）：</strong><br>
+                        上昇と下降を繰り返す三角波形のスウィープ。連続的な計測に適している。<br><br>
+                        <strong>④ サイン波スウィープ（Sinusoidal Sweep）：</strong><br>
+                        周波数をサイン波状に変化させる。特定の用途で使用される。<br><br>
+                        <strong>【スウィープ制御の技術的課題】</strong><br>
+                        <strong>① 周波数リニアリティ（線形性）：</strong><br>
+                        スウィープが完全に線形（直線的）であることが重要。非線形性があると、ビート周波数の計算に誤差が生じ、距離測定の精度が低下する。理想的なスウィープは：<br><br>
+                        $f(t) = f_0 + \frac{\Delta f}{T} \cdot t$<br><br>
+                        ここで、$f_0$は開始周波数、$\Delta f$はスウィープ幅、$T$はスウィープ時間、$t$は時間。実際には、発振器の特性や温度変化により、わずかな非線形性が生じるため、補正回路が必要。<br><br>
+                        <strong>② 位相ノイズ：</strong><br>
+                        発振器の位相がランダムに変動する現象。位相ノイズが大きいと、ビート周波数の測定精度が低下する。高品質な発振器（例：PLL: Phase-Locked Loop）を使用して位相ノイズを低減。<br><br>
+                        <strong>③ スウィープ速度の安定性：</strong><br>
+                        スウィープ速度（$\frac{\Delta f}{T}$）が一定であることが重要。速度が変動すると、距離計算に誤差が生じる。<br><br>
+                        <strong>④ ジッター（時間揺らぎ）：</strong><br>
+                        スウィープの開始タイミングや周期にばらつきがあると、計測精度が低下する。高精度なタイマー回路で制御。<br><br>
+                        <strong>【スウィープ制御の実装方法】</strong><br>
+                        <strong>① VCO（Voltage Controlled Oscillator：電圧制御発振器）：</strong><br>
+                        制御電圧に比例して周波数が変化する発振器。リニアな電圧波形を生成することで、リニアな周波数スウィープを実現。<br><br>
+                        <strong>② DDS（Direct Digital Synthesis：直接デジタル合成）：</strong><br>
+                        デジタル信号処理により、任意の周波数波形を生成。高精度で柔軟性が高いが、回路が複雑。<br><br>
+                        <strong>③ PLL（Phase-Locked Loop：位相同期ループ）：</strong><br>
+                        基準周波数と位相を同期させながら、周波数を変化させる。位相ノイズが低く、安定性が高い。<br><br>
+                        <strong>【水位計におけるスウィープパラメータ】</strong><br>
+                        ・開始周波数：24.000GHz（24GHz帯の場合）<br>
+                        ・終了周波数：24.100GHz（スウィープ幅100MHz）<br>
+                        ・スウィープ時間：10ms<br>
+                        ・スウィープ速度：10MHz/ms = 10GHz/s<br>
+                        ・繰り返し周期：100ms（1秒間に10回スウィープ）<br><br>
+                        <strong>【スウィープ制御の精度への影響】</strong><br>
+                        スウィープの線形性が1%の誤差を持つと、距離測定にも約1%の誤差が生じる。例えば、100mの距離を測定する場合、1%の誤差は1mに相当する。そのため、スウィープ制御の精度は、水位計の全体精度を決定する重要な要素である。
+                    </div>
+                    
+                    <div class="card">
+                        <span class="card-title">FMCW（Frequency Modulated Continuous Wave）方式の詳細解説</span>
+                        <p class="card-detail">
+                            <strong>【FMCWとは】</strong><br>
+                            FMCWは、周波数変調連続波方式。連続的に電磁波を送信しながら、周波数を時間とともに線形に変化させる方式。パルスレーダーと連続波レーダーの利点を組み合わせた技術。<br><br>
+                            <strong>【動作原理】</strong><br>
+                            ① 送信：周波数を時間とともに線形に増加させる電磁波を送信<br>
+                            例：24GHzから24.1GHzまで、10msかけて滑らかに増加（スウィープ）<br>
+                            ② 反射：水面で電磁波が反射<br>
+                            ③ 受信：反射波を受信。この時点で、送信周波数はさらに高い値に変化している<br>
+                            ④ 混合：送信波と受信波を混合器で合成<br>
+                            ⑤ ビート周波数の検出：混合により生じる「うなり」（ビート周波数）を検出<br>
+                            ⑥ 距離計算：ビート周波数から距離を算出<br><br>
+                            <strong>【距離計算の数式】</strong><br>
+                            距離 $R$ は、ビート周波数 $f_{beat}$ から以下の式で求められる：<br><br>
+                            $R = \frac{c \cdot f_{beat}}{2 \cdot \Delta f \cdot T}$<br><br>
+                            ここで、<br>
+                            $c$：光速（約$3 \times 10^8$ m/s）<br>
+                            $f_{beat}$：ビート周波数（Hz）<br>
+                            $\Delta f$：スウィープ幅（周波数の変化幅、Hz）<br>
+                            $T$：スウィープ時間（秒）<br><br>
+                            <strong>【具体例】</strong><br>
+                            スウィープ幅 $\Delta f = 100$ MHz、スウィープ時間 $T = 10$ ms、ビート周波数 $f_{beat} = 1$ MHz の場合：<br><br>
+                            $R = \frac{3 \times 10^8 \times 1 \times 10^6}{2 \times 100 \times 10^6 \times 0.01} = \frac{3 \times 10^{14}}{2 \times 10^6} = 150$ m<br><br>
+                            <strong>【FMCWの利点】</strong><br>
+                            ① 高精度：パルスレーダーより高い距離分解能（1mm以下が可能）<br>
+                            ② 低消費電力：連続波のため、パルスレーダーより送信電力が小さい<br>
+                            ③ 同時測定：距離と速度を同時に測定可能（ドップラー効果を利用）<br>
+                            ④ 小型化：パルスレーダーに必要な高電圧パルス発生回路が不要<br>
+                            ⑤ ノイズ耐性：FFT解析により、環境ノイズを効果的に除去可能<br><br>
+                            <strong>【技術的課題】</strong><br>
+                            ① 周波数リニアリティ：スウィープの線形性が精度に直結。非線形性があると、距離計算に誤差が生じる<br>
+                            ② 位相ノイズ：発振器の位相変動がビート周波数の測定精度を低下させる<br>
+                            ③ 複数反射源：複数の反射源がある場合、FFT解析により分離する必要がある<br>
+                            ④ 最大測定距離：スウィープ幅とサンプリング周波数により制限される<br><br>
+                            <strong>【水位計におけるFMCWの実装】</strong><br>
+                            ・送信周波数：24GHz帯または77GHz帯<br>
+                            ・スウィープ幅：通常50-200MHz<br>
+                            ・スウィープ時間：1-20ms<br>
+                            ・サンプリング周波数：100kHz-1MHz<br>
+                            ・FFT点数：512-4096点<br>
+                            ・距離分解能：1mm以下（77GHz帯の場合）
+                        </p>
+                    </div>
+
+            <h3>② 超高速リアルタイム処理</h3>
+            <p>アンテナが受け取った「生」の電磁波データを、遅延なくデジタル化し、内蔵のDSP（専用演算回路）で瞬時に数学的処理を行います。</p>
+                    <div class="note">
+                        <strong>「生の波形データ」とは：</strong><br>
+                        アンテナが受信した、何も処理されていない元の電磁波信号のこと。このデータには、以下の情報が全て含まれている：<br><br>
+                        ・水面からの反射信号（目的の信号）<br>
+                        ・ハシゴ、壁、配管などの構造物からの反射（不要な信号）<br>
+                        ・雨滴、風による水面の波立ちからの反射（ノイズ）<br>
+                        ・電磁干渉によるノイズ<br>
+                        ・アンテナ自体の特性による歪み<br><br>
+                        この「生の波形データ」は、時間軸上で連続的な電圧値として記録される。1回の計測（スウィープ）で、例えば1000個のサンプルポイントが記録され、各ポイントは16ビット（2バイト）の数値で表現される。つまり、1回の計測で約2KBのデータが生成される。これを1秒間に100回計測すると、200KB/秒、1時間で約720MBという膨大なデータ量になる。このため、現場でFFT解析を行い、必要な「距離情報（数バイト）」だけを抽出する「データダイエット」が不可欠となる。
+                    </div>
+
+            <h3>③ 高度な省電力マネジメント（Duty Cycle）</h3>
+            <p>山奥でのバッテリー駆動を実現するため、「計測（数ミリ秒）→ 解析（数ミリ秒）→ 通信（数百ミリ秒）→ 深い眠り（数分間）」という電源サイクルを完璧に制御します。この制御がなければ、電池は数日で尽きてしまいます。</p>
+        </div>
+    </details>
+        </section>
+
+        <section id="cpu-arch">
+            <h2>4. CPUアーキテクチャ戦略：ARMとRISC-V</h2>
+    <details>
+        <summary id="cpu-arch-strategy">コスト構造と将来の価格破壊に向けた選択肢</summary>
+        <div class="content">
+            <div class="card">
+                <span class="card-title">ARM（現状の最適解）</span>
+                <p class="card-detail">スマホ向けに磨かれた電力効率と、FFT演算を高速化する「SIMD命令セット」が完備。世界標準のため、開発ソフトの資産が多く、人件費を含めたトータルコストと信頼性で選ばれている。※ただし、製造ごとにライセンス料が発生する。</p>
+            </div>
+                    
+                    <div class="note">
+                        <strong>SIMD命令セットとは：</strong><br>
+                        SIMD（Single Instruction, Multiple Data）は、「1つの命令で複数のデータを同時に処理する」並列演算技術。FFT演算では、大量の数値配列に対して同じ演算（加算、乗算など）を繰り返すため、SIMDが威力を発揮する。<br><br>
+                        <strong>具体例：</strong><br>
+                        通常のCPU命令では、2つの数値を足すのに1命令が必要。しかし、SIMD命令（例：ARMのNEON命令）を使えば、128ビットのレジスタに8個の16ビット整数を格納し、1命令で8組の加算を同時実行できる。つまり、理論上8倍の速度向上が可能。<br><br>
+                        <strong>FFTにおけるSIMDの活用：</strong><br>
+                        FFTは、複素数の加算・乗算を大量に行う。SIMD命令により、複素数の実部と虚部を同時に処理することで、FFT演算時間を大幅に短縮。これにより、リアルタイムでの水位計測が可能になる。<br><br>
+                        <strong>マイクロプロセッサとは：</strong><br>
+                        CPU（中央処理装置）の機能を1つの半導体チップに集積したもの。1970年代に登場し、コンピュータの小型化・低価格化を実現した。水位計では、マイクロプロセッサが以下の役割を担う：<br><br>
+                        ・FMCW信号の生成制御<br>
+                        ・ADC（アナログ-デジタル変換）の制御<br>
+                        ・DSPとの連携によるFFT演算の実行<br>
+                        ・通信プロトコルの処理<br>
+                        ・省電力制御（Duty Cycle）<br>
+                        ・エラーハンドリングと自己診断<br><br>
+                        1990年代の超音波式水位計では、8ビットマイクロプロセッサ（例：Intel 8051）が温度補正を担当。現在の電波式では、32ビットARMマイクロプロセッサが、より高度な信号処理とAI機能を実現している。
+            </div>
+            
+            <div class="card">
+                <span class="card-title">RISC-V（将来の価格破壊）</span>
+                <p class="card-detail">オープンソースのためライセンス料がゼロ。誰でも自由に「水位計測に特化した拡張命令」を追加できる。将来、完全内製チップを設計すれば、性能を上げつつコストを劇的に下げる戦略的カードとなる。</p>
+            </div>
+                    
+                    <div class="card">
+                        <span class="card-title">RISC-Vの今後の可能性と展望</span>
+                        <p class="card-detail">
+                            <strong>【RISC-Vとは】</strong><br>
+                            RISC-Vは、2010年にカリフォルニア大学バークレー校で開発されたオープンソースのCPU命令セットアーキテクチャ（ISA）。「RISC」はReduced Instruction Set Computer（縮小命令セットコンピュータ）の略で、「V」は5番目のRISCアーキテクチャを意味する。ARMやx86と異なり、ライセンス料が不要で、誰でも自由に使用・改変・実装できる。<br><br>
+                            <strong>【現在の状況（2020年代）】</strong><br>
+                            ・IoTデバイス、組み込みシステムでの採用が増加<br>
+                            ・中国、欧州、米国でRISC-Vベースのチップ開発が活発化<br>
+                            ・SiFive、Andes Technologyなどの企業がRISC-Vコアを提供<br>
+                            ・Google、Qualcomm、Intelなどの大手企業もRISC-Vに投資<br>
+                            ・まだARMほど成熟していないが、急速にエコシステムが拡大中<br><br>
+                            <strong>【今後の可能性：技術的優位性】</strong><br>
+                            <strong>① カスタマイズ性：</strong><br>
+                            水位計測に特化した拡張命令を自由に追加できる。例えば：<br>
+                            ・FFT演算専用命令：複素数の乗算を1命令で実行<br>
+                            ・FMCW制御専用命令：周波数スウィープの生成をハードウェアで実現<br>
+                            ・信号処理専用命令：フィルタリング、ノイズ除去を高速化<br>
+                            これにより、汎用CPUより高性能で、専用DSPより柔軟な設計が可能。<br><br>
+                            <strong>② コスト削減：</strong><br>
+                            ・ライセンス料がゼロ：ARMは製造ごとにライセンス料が発生するが、RISC-Vは無料<br>
+                            ・完全内製化：自社でチップ設計から製造まで一貫して行えば、中間マージンを削減<br>
+                            ・量産効果：大量生産により、チップ単価を大幅に下げられる可能性<br>
+                            例：ARMライセンス料が1チップあたり数ドルかかる場合、年間100万個生産すると数百万ドルのコスト削減が可能<br><br>
+                            <strong>③ セキュリティ：</strong><br>
+                            ・オープンソースのため、セキュリティホールを誰でも検証可能<br>
+                            ・自社で設計するため、バックドアなどの懸念がない<br>
+                            ・政府・重要インフラでの採用が増加（特に中国、欧州）<br><br>
+                            <strong>④ 柔軟な実装：</strong><br>
+                            ・用途に応じて、必要最小限の機能だけを実装可能（省電力化）<br>
+                            ・高性能が必要な場合は、スーパースカラー、アウトオブオーダー実行などを追加<br>
+                            ・マルチコア構成も自由に設計可能<br><br>
+                            <strong>【今後の可能性：市場動向】</strong><br>
+                            <strong>① IoT市場での拡大：</strong><br>
+                            ・2025年以降、IoTデバイスの50%以上がRISC-Vを採用すると予測（一部の市場調査）<br>
+                            ・低消費電力、低コストが求められるIoTデバイスに最適<br>
+                            ・水位計、気象観測、農業IoTなどの産業用途での採用が増加<br><br>
+                            <strong>② エッジAI市場での台頭：</strong><br>
+                            ・エッジAIデバイスでは、カスタマイズ性が重要<br>
+                            ・AI推論に特化した拡張命令を追加できるRISC-Vが有利<br>
+                            ・Rapidus 2nmプロセスと組み合わせることで、高性能エッジAI SoCが実現可能<br><br>
+                            <strong>③ 中国市場での成長：</strong><br>
+                            ・米中貿易摩擦により、ARMライセンスの取得が困難になった中国企業がRISC-Vに移行<br>
+                            ・中国は国家戦略としてRISC-Vを推進（「中国製造2025」）<br>
+                            ・中国市場でのRISC-V採用が、世界的な普及を後押し<br><br>
+                            <strong>④ 欧州・日本での戦略的採用：</strong><br>
+                            ・技術主権（Technological Sovereignty）の観点から、オープンソースのRISC-Vが注目<br>
+                            ・欧州は「European Chips Act」でRISC-Vを支援<br>
+                            ・日本でも、RISC-Vベースの国産チップ開発が検討されている<br><br>
+                            <strong>【今後の可能性：水位計への応用】</strong><br>
+                            <strong>① 完全内製化によるコスト削減：</strong><br>
+                            ・2025-2030年頃、RISC-Vベースの水位計専用SoCを自社設計・製造<br>
+                            ・ARMライセンス料の削減により、チップコストを30-50%削減可能<br>
+                            ・大量生産により、さらにコスト削減が可能<br><br>
+                            <strong>② 水位計測特化命令の追加：</strong><br>
+                            ・FFT演算専用命令：1024点FFTを現在の1/10の時間で実行<br>
+                            ・FMCW制御専用命令：周波数スウィープの生成をハードウェアで実現<br>
+                            ・信号処理専用命令：フィルタリング、ノイズ除去を高速化<br>
+                            ・これにより、汎用ARM SoCより高性能で、消費電力も削減<br><br>
+                            <strong>③ エッジAI統合：</strong><br>
+                            ・RISC-VコアにAI推論専用の拡張命令を追加<br>
+                            ・異常検知、予測などのAI機能を、低消費電力で実行<br>
+                            ・Rapidus 2nmプロセスと組み合わせることで、完全自律型の予知保全が実現<br><br>
+                            <strong>④ セキュリティ強化：</strong><br>
+                            ・重要インフラ（水力発電所）での使用を考慮し、セキュリティ機能を強化<br>
+                            ・暗号化、認証などのセキュリティ命令を追加<br>
+                            ・バックドアのない、信頼性の高いチップを実現<br><br>
+                            <strong>【技術的課題と解決策】</strong><br>
+                            <strong>① エコシステムの成熟：</strong><br>
+                            課題：ARMほど開発ツール、ライブラリが充実していない<br>
+                            解決策：2020年代後半には、開発環境が大幅に改善される見込み。多くの企業がRISC-Vに投資しているため、エコシステムは急速に拡大中。<br><br>
+                            <strong>② 性能の最適化：</strong><br>
+                            課題：ARMほど最適化されていない実装が多い<br>
+                            解決策：時間の経過とともに、最適化された実装が増加。SiFive、Andes Technologyなどの企業が高性能なRISC-Vコアを提供している。<br><br>
+                            <strong>③ 互換性：</strong><br>
+                            課題：ARM用のソフトウェアがそのまま動作しない<br>
+                            解決策：コンパイラの改善により、ソースコードからRISC-V用に再コンパイル可能。また、エミュレーション技術も進歩している。<br><br>
+                            <strong>【2030年代の展望】</strong><br>
+                            ・RISC-VがIoT市場でARMと並ぶ、または上回るシェアを獲得<br>
+                            ・水位計を含む産業用IoTデバイスの多くがRISC-Vを採用<br>
+                            ・完全内製化により、コストが大幅に削減され、水位計の普及が加速<br>
+                            ・RISC-V + Rapidus 2nmプロセスにより、高性能・低消費電力・低コストのエッジAI SoCが実現<br>
+                            ・技術主権の観点から、政府・重要インフラでのRISC-V採用が標準化<br><br>
+                            <strong>【結論】</strong><br>
+                            RISC-Vは、現在は「将来の可能性」の段階だが、2025-2030年頃には、水位計を含む多くのIoTデバイスで実用化が進むと予測される。特に、完全内製化によるコスト削減、カスタマイズ性による高性能化、セキュリティ面での優位性が、RISC-Vの大きな魅力となる。Rapidus 2nmプロセスと組み合わせることで、日本発の世界最高水準の水位計SoCが実現可能になる可能性がある。
+                        </p>
+            </div>
+        </div>
+    </details>
+        </section>
+
+        <section id="physics-deep">
+            <h2>5. 周波数の物理学：FMCWの深層理論</h2>
+    <details>
+        <summary id="physics-deep-precision">なぜ「震え」が「1mmの精度」に化けるのか</summary>
+        <div class="content">
+            <p>周波数（Hz）とは1秒間に繰り返される波の数。水位計は、電波を「滑り台」のように滑らかに上げ続けます。</p>
+
+            <div class="math-block">
+                Beat Frequency Calculation:<br>
+                $f_{beat} = f_{current} - f_{received}$
+            </div>
+            
+            <div class="note">
+                <strong>物理学的メカニズム：</strong><br>
+                1. アンテナから「今の高い音（高周波数）」を出す。<br>
+                2. 水面で反射して戻ってくるまでの間に、アンテナは「さらに高い音」を出している。<br>
+                3. 戻った「過去の音」と「今の音」の差（ビート周波数）を測る。<br>
+                4. 距離が遠いほど、戻る間に音程の差が広がる。この「うなり」が距離に直結する。
+            </div>
+        </div>
+    </details>
+        </section>
+
+        <section id="fft-deep">
+            <h2>6. FFT（高速フーリエ変換）の詳細詳解</h2>
+    <details>
+        <summary id="fft-deep-magic">カオスな信号から「真実の水位」を分離する数学の魔法</summary>
+        <div class="content">
+            <h3>FFTとは何か？</h3>
+            <p>時間の経過とともに変化する複雑な「生の波形」を、**「どの周波数成分が、どの程度の強さで含まれているか」**に分解する手法です。</p>
+
+            <div class="note">
+                <strong>直感的な理解：</strong><br>
+                ・光をプリズムに通して虹（波長ごと）に分解する。<br>
+                ・混ざり合ったスムージーから「リンゴの成分」「バナナの成分」を特定する。<br>
+                ・オーケストラの音から「バイオリンのソロ」だけを聴き分ける。
+            </div>
+                    
+                    <div class="card">
+                        <span class="card-title">FFT（高速フーリエ変換）の詳細技術解説</span>
+                        <p class="card-detail">
+                            <strong>【数学的基礎】</strong><br>
+                            FFTは、フーリエ変換を高速化したアルゴリズム。フーリエ変換とは、時間領域の信号 $f(t)$ を周波数領域 $F(\omega)$ に変換する数学的操作：<br><br>
+                            $F(\omega) = \int_{-\infty}^{\infty} f(t) e^{-i\omega t} dt$<br><br>
+                            離散フーリエ変換（DFT）では、$N$個のサンプル点に対して $O(N^2)$ の計算量が必要。しかし、FFTアルゴリズム（Cooley-Tukey法、1965年）により、$O(N \log N)$ に削減。例えば、1024点のデータでは、約100倍の高速化が実現される。<br><br>
+                            <strong>【水位計におけるFFTの処理フロー】</strong><br>
+                            ① アンテナが受信した電磁波信号をADCでデジタル化（例：1024サンプル）<br>
+                            ② 時間領域のデータ配列をFFT演算により周波数領域に変換<br>
+                            ③ 周波数領域では、各周波数成分の「強度（パワースペクトル）」が得られる<br>
+                            ④ 周波数は距離に変換可能：$R = \frac{c \cdot f_{beat}}{2 \cdot \Delta f}$（$c$は光速、$\Delta f$はスウィープ幅）<br>
+                            ⑤ パワースペクトル上で最大のピークを検出 → これが水面の距離<br><br>
+                            <strong>【FFTの利点】</strong><br>
+                            ・複数の反射源（水面、ハシゴ、壁）を同時に識別可能<br>
+                            ・ノイズ（雨、風）を周波数領域でフィルタリング可能<br>
+                            ・高精度：理論上、1mm以下の解像度が可能<br>
+                            ・リアルタイム処理：DSPにより数ミリ秒で完了<br><br>
+                            <strong>【実装上の課題】</strong><br>
+                            ・計算量：$N$が大きいほど精度が上がるが、計算時間も増加<br>
+                            ・メモリ使用量：$N$点のFFTには約$4N$バイトのメモリが必要<br>
+                            ・数値誤差：浮動小数点演算の精度が結果に影響<br>
+                            ・窓関数：信号の切り出し方法により、スペクトルの漏れ（リーケージ）が発生する可能性
+                        </p>
+            </div>
+
+            <div class="card">
+                <span class="card-title">水位計におけるFFTの具体的役割</span>
+                <p class="card-detail">
+                    アンテナには「水面の反射」だけでなく、「ハシゴの反射」「壁の反射」「雨のノイズ」が全て混ざって届きます。<br>
+                    FFTをかけることで、これらを「距離（周波数）ごとの山（ピーク）」としてグラフ化。SoCは、ハシゴに対応する距離のピークを「無視」し、水面に対応するピークだけを正確に追尾（トラッキング）します。
+                </p>
+            </div>
+        </div>
+    </details>
+        </section>
+
+        <section id="rapidus">
+            <h2>7. 次世代半導体「ラピダス（Rapidus）」の衝撃</h2>
+    <details>
+        <summary id="rapidus-future">2nm世代の国産チップが切り拓く自律判断の未来</summary>
+        <div class="content">
+            <p>現在主流のチップより数世代先を行く2nmプロセスは、水位計の概念を根底から変えます。</p>
+            <ul>
+                <li><strong>圧倒的な省電力：</strong> 演算効率が向上し、太陽光パネルなしの乾電池駆動でも、常時AIカメラ監視が可能になる。</li>
+                <li><strong>エッジ・インテリジェンス：</strong> サーバーに頼らず、現場のSoCが「これは通常の水位変動か、それとも上流の崩落か」をミリ秒単位で自律判断。</li>
+            </ul>
+                    
+                    <div class="card">
+                        <span class="card-title">ラピダス（Rapidus）の詳細技術解説</span>
+                        <p class="card-detail">
+                            <strong>【企業概要】</strong><br>
+                            Rapidus株式会社は、2022年に設立された日本の半導体製造企業。トヨタ自動車、ソニーグループ、NTT、NEC、キオクシア、ソフトバンク、電装、三菱UFJ銀行の8社が出資。目標は、2027年に2nmプロセスの量産開始、2030年代に次世代1nmプロセスの開発。<br><br>
+                            <strong>【2nmプロセスとは】</strong><br>
+                            プロセスルール（半導体の微細化の指標）が2ナノメートル（2nm = 0.000002mm）という極めて微細な加工技術。現在主流の7nmプロセスと比べて、以下の優位性がある：<br><br>
+                            ・トランジスタ密度：約3.5倍（同じ面積により多くのトランジスタを配置可能）<br>
+                            ・動作速度：約1.5倍高速化<br>
+                            ・消費電力：約40%削減（同じ性能の場合）<br>
+                            ・性能/電力比：約2.5倍向上<br><br>
+                            <strong>【水位計への影響】</strong><br>
+                            ① 省電力化：FFT演算やAI推論を、現在の1/3以下の電力で実行可能。バッテリー寿命が3倍以上に延びる。<br>
+                            ② 高性能化：より複雑なAIモデル（深層学習）をエッジデバイスで実行可能。リアルタイムでの異常検知、予測が実現。<br>
+                            ③ 小型化：SoC全体が小型化され、よりコンパクトな水位計が可能。<br>
+                            ④ コスト削減：将来的に量産効果により、チップ単価が低下する可能性。<br><br>
+                            <strong>【技術的課題】</strong><br>
+                            ・極端紫外線（EUV）リソグラフィ技術の確立が必要<br>
+                            ・新材料（High-K、金属ゲートなど）の開発が必要<br>
+                            ・製造設備への巨額投資（数兆円規模）が必要<br>
+                            ・量産技術の確立には時間がかかる（2027年目標）
+                        </p>
+                    </div>
+                    
+                    <div class="note">
+                        <strong>エッジAIとは：</strong><br>
+                        エッジAI（Edge AI）は、クラウドサーバーではなく、現場のデバイス（エッジ）でAI推論を実行する技術。水位計の文脈では、以下のような応用が可能：<br><br>
+                        <strong>① 異常検知：</strong><br>
+                        過去の水位データを学習したAIモデルが、リアルタイムで「通常の変動」と「異常（崩落、土石流の前兆など）」を自動判別。ミリ秒単位で警告を発信。<br><br>
+                        <strong>② 予測：</strong><br>
+                        気象データ、上流の水位データ、過去のパターンを学習し、「1時間後の水位」を予測。発電計画の最適化に活用。<br><br>
+                        <strong>③ 画像認識：</strong><br>
+                        カメラ画像から「流木の接近」「氷の形成」「設備の異常」を自動検出。人的点検の頻度を削減。<br><br>
+                        <strong>【エッジAIの利点】</strong><br>
+                        ・低遅延：サーバーとの通信が不要なため、リアルタイム処理が可能<br>
+                        ・プライバシー：画像データを外部に送信しないため、セキュリティリスクが低い<br>
+                        ・オフライン動作：通信が途絶えても、基本的な監視機能は継続<br>
+                        ・通信コスト削減：生データではなく、AIの判断結果（数バイト）だけを送信<br><br>
+                        <strong>【技術的課題】</strong><br>
+                        ・計算リソース：AI推論には大量の演算が必要。高性能なSoC（Rapidus 2nmなど）が不可欠<br>
+                        ・メモリ容量：AIモデルの重みパラメータを保存するメモリが必要<br>
+                        ・学習データ：高精度なAIモデルには、大量の学習データが必要<br>
+                        ・電力消費：AI推論は通常の信号処理より多くの電力を消費。省電力設計が重要
+                    </div>
+        </div>
+    </details>
+        </section>
+
+        <section id="lpwa-diet">
+            <h2>8. データダイエットとLPWA通信最適化</h2>
+    <details>
+        <summary id="lpwa-diet-necessity">なぜ「現場で解析」することが不可欠なのか</summary>
+        <div class="content">
+            <div class="warning">
+                <strong>通信のボトルネック：</strong><br>
+                FFT解析前の「生の波形データ」は数MBから数GBという膨大な量になります。山奥の不安定な回線では送信不可能です。
+            </div>
+                    
+                    <div class="note">
+                        <strong>「生の波形データ」の詳細解説：</strong><br>
+                        <strong>【データ構造】</strong><br>
+                        アンテナが受信した電磁波信号は、ADC（アナログ-デジタル変換器）により、時間軸上の離散的な数値列に変換される。例えば：<br><br>
+                        ・サンプリング周波数：100kHz（1秒間に10万回サンプリング）<br>
+                        ・1回のスウィープ時間：10ms（1000サンプル）<br>
+                        ・各サンプルのビット数：16ビット（2バイト）<br>
+                        ・1回の計測データ量：1000サンプル × 2バイト = 2KB<br><br>
+                        <strong>【データ量の計算】</strong><br>
+                        ・1秒間に100回計測：2KB × 100 = 200KB/秒<br>
+                        ・1時間：200KB × 3600 = 720MB<br>
+                        ・1日：720MB × 24 = 17.3GB<br><br>
+                        この生データには、水面の反射だけでなく、全てのノイズ（雨、風、構造物の反射など）が含まれている。そのまま送信すると、通信帯域を圧迫し、コストも膨大になる。<br><br>
+                        <strong>【データダイエットのプロセス】</strong><br>
+                        ① 生の波形データ（2KB）をFFT演算により周波数領域に変換<br>
+                        ② 周波数スペクトルから最大ピーク（水面の反射）を検出<br>
+                        ③ ピークの周波数から距離を計算：$R = \frac{c \cdot f_{beat}}{2 \cdot \Delta f}$<br>
+                        ④ 距離値（例：12.345m）を数値データ（4-8バイト）として出力<br><br>
+                        このように、2KBの生データが数バイトに圧縮される。圧縮率は約99.9%以上。これにより、LPWA（低消費電力広域通信）でも効率的にデータを送信できる。
+                    </div>
+                    
+            <p>そこでSoCが現場でFFT演算を完結させ、必要な「12.345m」という数値データ（わずか数バイト）にまで情報を凝縮します。この**「データダイエット」**があるからこそ、LPWA（LoRaWAN等）での超長距離伝送が実現します。</p>
+        </div>
+    </details>
+        </section>
+
+        <section id="monitoring">
+            <h2>9. 水力発電の監視システム</h2>
+    <details>
+                <summary id="monitoring-realtime">24時間365日の連続監視とリアルタイム制御</summary>
+        <div class="content">
+                    <p>水力発電所では、発電効率の最大化と安全性確保のため、多様な計測データを統合的に監視し、リアルタイムで制御を行います。</p>
+                    
+                    <div class="card">
+                        <span class="card-title">監視システムの構成要素</span>
+                        <p class="card-detail">
+                            <strong>① センサー群：</strong><br>
+                            ・水位センサー：ダム、取水口、放水路の水位を計測<br>
+                            ・流量センサー：取水量、放流量を計測<br>
+                            ・圧力センサー：水圧管路の圧力を計測<br>
+                            ・振動センサー：水車、発電機の振動を計測<br>
+                            ・温度センサー：軸受、巻線の温度を計測<br>
+                            ・電力センサー：発電量、電圧、電流、周波数を計測<br><br>
+                            <strong>② データ収集システム：</strong><br>
+                            ・SoCベースのデータロガー：各センサーからデータを収集<br>
+                            ・タイムスタンプ付与：RTCにより正確な時刻を記録<br>
+                            ・データ圧縮：FFT解析により、生データを数値データに変換<br><br>
+                            <strong>③ 通信システム：</strong><br>
+                            ・有線通信：制御室への高速データ伝送（Ethernet、RS-485）<br>
+                            ・無線通信：遠隔監視用（Wi-Fi、LPWA）<br>
+                            ・冗長化：複数の通信経路による信頼性向上<br><br>
+                            <strong>④ 監視・制御システム：</strong><br>
+                            ・SCADA（Supervisory Control and Data Acquisition）：統合監視システム<br>
+                            ・HMI（Human Machine Interface）：操作画面<br>
+                            ・制御ロジック：自動運転、保護制御<br>
+                            ・データベース：長期データの蓄積・分析
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <span class="card-title">監視システムの機能</span>
+                        <p class="card-detail">
+                            <strong>① リアルタイム監視：</strong><br>
+                            ・全ての計測データをリアルタイムで表示<br>
+                            ・異常値の自動検出とアラーム発報<br>
+                            ・トレンドグラフによる可視化<br>
+                            ・複数発電所の統合監視<br><br>
+                            <strong>② 自動制御：</strong><br>
+                            ・発電量の自動調整：電力需要に応じた最適な発電量の維持<br>
+                            ・水門の自動制御：取水量の最適化<br>
+                            ・保護制御：異常検知時の自動停止<br>
+                            ・負荷追従制御：周波数変動への自動対応<br><br>
+                            <strong>③ データ分析：</strong><br>
+                            ・発電効率の評価：実発電量と理論発電量の比較<br>
+                            ・設備健全性の評価：振動、温度データからの劣化予測<br>
+                            ・運転パターンの最適化：AIによる運転計画の提案<br>
+                            ・コスト分析：発電コスト、メンテナンスコストの評価<br><br>
+                            <strong>④ 予知保全：</strong><br>
+                            ・異常パターンの検出：AIによる異常検知<br>
+                            ・劣化予測：長期データからの傾向分析<br>
+                            ・メンテナンス計画：最適なメンテナンスタイミングの提案<br>
+                            ・リスク評価：故障リスクの定量化
+                        </p>
+                    </div>
+
+                    <div class="note">
+                        <strong>エッジAIによる自律監視：</strong><br>
+                        Rapidus 2nmプロセスにより、現場のSoCでAI推論が可能になり、以下のような自律監視が実現されます：<br><br>
+                        ・現場での異常検知：サーバーに送信する前に、現場で異常を検知し、即座に警告<br>
+                        ・予測的制御：過去のデータから、最適な運転パターンを予測し、自動制御<br>
+                        ・通信コスト削減：異常時のみデータを送信し、通信コストを削減<br>
+                        ・オフライン動作：通信が途絶えても、基本的な監視・制御を継続
+                    </div>
+
+                    <div class="card">
+                        <span class="card-title">プログラミング言語の役割：PHPとC#</span>
+                        <p class="card-detail">
+                            水力発電の監視・制御システムでは、異なる用途に応じて様々なプログラミング言語が使用されてきました。特に、PHPとC#は、それぞれ異なる領域で重要な役割を果たしてきました。<br><br>
+                            <strong>【C#（C-Sharp）の役割と歴史】</strong><br>
+                            C#は、Microsoftが2000年に開発したオブジェクト指向プログラミング言語。Windows環境でのアプリケーション開発に強みを持ちます。<br><br>
+                            <strong>① SCADAシステムの開発（2000年代～現在）：</strong><br>
+                            ・WindowsベースのSCADA（Supervisory Control and Data Acquisition）システムの開発に広く使用<br>
+                            ・例：制御室の監視画面、HMI（Human Machine Interface）の開発<br>
+                            ・.NET Framework/.NET Coreによる豊富なライブラリを活用<br>
+                            ・リアルタイムデータの可視化、グラフ表示、アラーム機能の実装<br>
+                            ・PLC（プログラマブルロジックコントローラ）との通信（Modbus、OPC UAなど）<br><br>
+                            <strong>② 制御ソフトウェアの開発：</strong><br>
+                            ・発電量制御、水門制御などの制御ロジックの実装<br>
+                            ・Windowsサービスとして常駐し、24時間365日の監視・制御を実行<br>
+                            ・データベース（SQL Server、Oracle）との連携<br>
+                            ・例：発電量を需要に応じて自動調整する制御ソフトウェア<br><br>
+                            <strong>③ デスクトップアプリケーション：</strong><br>
+                            ・制御室のオペレーター向けのデスクトップアプリケーション<br>
+                            ・WPF（Windows Presentation Foundation）による高機能なUI開発<br>
+                            ・リアルタイムグラフ、トレンド表示、レポート生成機能<br>
+                            ・例：複数の発電所を統合監視するデスクトップアプリケーション<br><br>
+                            <strong>【C#が選ばれる理由】</strong><br>
+                            ・Windows環境との親和性：制御室のPCはWindowsが主流のため、開発・運用が容易<br>
+                            ・豊富なライブラリ：.NET Framework/.NET Coreによる豊富なライブラリ（通信、データベース、グラフ表示など）<br>
+                            ・型安全性：コンパイル時にエラーを検出でき、堅牢なシステム開発が可能<br>
+                            ・パフォーマンス：ネイティブコードに近い実行速度で、リアルタイム処理に適している<br>
+                            ・開発効率：Visual Studioによる統合開発環境により、開発効率が高い<br><br>
+                            <strong>【PHPの役割と歴史】</strong><br>
+                            PHP（PHP: Hypertext Preprocessor）は、1995年に開発されたサーバーサイドスクリプト言語。Webアプリケーション開発に強みを持ちます。<br><br>
+                            <strong>① Webベースの監視システム（2000年代後半～現在）：</strong><br>
+                            ・Webブラウザからアクセス可能な監視システムの開発<br>
+                            ・例：本社から全国の発電所を監視するWebアプリケーション<br>
+                            ・データベース（MySQL、PostgreSQL）から計測データを取得し、Webページに表示<br>
+                            ・リアルタイムデータの可視化（JavaScript、Chart.jsなどと連携）<br>
+                            ・複数のユーザーが同時にアクセス可能<br><br>
+                            <strong>② レポート生成システム：</strong><br>
+                            ・日次、月次、年次のレポートを自動生成<br>
+                            ・PDF生成（TCPDF、FPDFなど）による帳票出力<br>
+                            ・Excel出力（PhpSpreadsheetなど）によるデータ分析<br>
+                            ・例：発電量レポート、メンテナンス履歴レポート<br><br>
+                            <strong>③ データ可視化ダッシュボード：</strong><br>
+                            ・計測データをグラフ、チャートで可視化<br>
+                            ・Ajaxによる非同期通信で、リアルタイム更新<br>
+                            ・複数の発電所のデータを一画面で比較表示<br>
+                            ・例：複数の水力発電所の発電量を比較するダッシュボード<br><br>
+                            <strong>④ RESTful APIの提供：</strong><br>
+                            ・モバイルアプリ、外部システムからデータを取得するAPI<br>
+                            ・JSON形式でデータを返却<br>
+                            ・認証・認可機能の実装<br>
+                            ・例：スマートフォンアプリから発電量データを取得するAPI<br><br>
+                            <strong>【PHPが選ばれる理由】</strong><br>
+                            ・Web技術との親和性：HTML、CSS、JavaScriptと自然に統合可能<br>
+                            ・開発の容易さ：比較的簡単な構文で、短期間で開発可能<br>
+                            ・オープンソース：無料で使用可能で、豊富なライブラリが利用可能<br>
+                            ・クロスプラットフォーム：Windows、Linux、macOSで動作<br>
+                            ・データベース連携：MySQL、PostgreSQLなどとの連携が容易<br>
+                            ・レガシーシステムとの統合：既存のWebシステムとの統合が容易<br><br>
+                            <strong>【C#とPHPの使い分け】</strong><br>
+                            <table style="width:100%; border-collapse: collapse; margin: 10px 0;">
+                            <tr style="background-color: #f0f7ff;">
+                                <th style="border: 1px solid #ddd; padding: 8px;">用途</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">C#</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">PHP</th>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">制御室の監視画面</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ 適している（Windows環境、リアルタイム処理）</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">△ 可能だが、リアルタイム性に劣る</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">Webベースの監視システム</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ ASP.NET Coreで可能</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ 適している（Web開発に特化）</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">制御ロジックの実装</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ 適している（パフォーマンス、型安全性）</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✗ 不適切（パフォーマンス、リアルタイム性）</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">レポート生成</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ 可能（Crystal Reports、Reporting Services）</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ 適している（PDF、Excel生成が容易）</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">RESTful API</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ ASP.NET Core Web APIで可能</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ 適している（Laravel、Symfonyなど）</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">モバイルアプリのバックエンド</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ ASP.NET Coreで可能</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">✓ 適している（API開発が容易）</td>
+                            </tr>
+                            </table>
+                            <br>
+                            <strong>【技術の進化と今後の展望】</strong><br>
+                            <strong>2000年代：</strong><br>
+                            ・C#：WindowsベースのSCADAシステムが主流。制御室のPCで動作するデスクトップアプリケーションが中心<br>
+                            ・PHP：Webベースの監視システムが登場。本社から遠隔監視が可能に<br><br>
+                            <strong>2010年代：</strong><br>
+                            ・C#：.NET Coreの登場により、Linux環境でも動作可能に。クロスプラットフォーム対応が進む<br>
+                            ・PHP：フレームワーク（Laravel、Symfonyなど）の普及により、大規模システム開発が可能に<br>
+                            ・両言語：RESTful APIの提供により、モバイルアプリとの連携が進む<br><br>
+                            <strong>2020年代～現在：</strong><br>
+                            ・C#：.NET 5/6/7/8の登場により、パフォーマンスが向上。マイクロサービス、コンテナ化に対応<br>
+                            ・PHP：PHP 8の登場により、パフォーマンスが大幅に向上。JITコンパイラにより、高速化<br>
+                            ・両言語：クラウド環境（Azure、AWS、GCP）での運用が一般的に<br>
+                            ・エッジコンピューティング：現場のSoCで動作する軽量なアプリケーション開発が進む<br><br>
+                            <strong>【水力発電における具体的な使用例】</strong><br>
+                            <strong>C#の使用例：</strong><br>
+                            ・制御室の監視画面：複数の発電所のリアルタイムデータを表示するWPFアプリケーション<br>
+                            ・発電量制御ソフトウェア：電力需要に応じて発電量を自動調整するWindowsサービス<br>
+                            ・データロガー：計測データをデータベースに記録するアプリケーション<br>
+                            ・アラームシステム：異常検知時に音声・メールで通知するシステム<br><br>
+                            <strong>PHPの使用例：</strong><br>
+                            ・Web監視ダッシュボード：本社から全国の発電所を監視するWebアプリケーション<br>
+                            ・レポート生成システム：日次・月次の発電量レポートを自動生成するシステム<br>
+                            ・モバイルアプリのバックエンド：スマートフォンアプリから発電量データを取得するRESTful API<br>
+                            ・データ可視化：計測データをグラフ・チャートで可視化するWebアプリケーション<br>
+                            ・ユーザー管理：複数のユーザーがアクセスする際の認証・認可システム
+                        </p>
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <section id="maintenance">
+            <h2>10. 損失落差による予知保全と経営価値</h2>
+            <details>
+                <summary id="maintenance-health">計測データが可視化する「水力発電設備の健康寿命」</summary>
+                <div class="content">
+                    <p>高精度な計測技術は、単なる数値管理を超え、数億円規模の設備劣化を防ぐ「診断薬」になります。特に、水位計測による「損失落差」の監視は、水力発電システムの健全性を評価する重要な指標です。</p>
+                    
+                    <div class="card">
+                        <span class="card-title">有効落差（Effective Head）とは</span>
+                        <p class="card-detail">
+                            有効落差は、水力発電の理論的な発電能力を表す指標。上流の水位（$H_{upper}$）と下流の水位（$H_{lower}$）の差から、損失（$H_{loss}$）を差し引いた値です。<br><br>
+                            <strong>有効落差の計算式：</strong><br>
+                            $H_{effective} = (H_{upper} - H_{lower}) - H_{loss}$<br><br>
+                            ここで、<br>
+                            $H_{upper}$：上流水位（ダムの水位）<br>
+                            $H_{lower}$：下流水位（放水路の水位）<br>
+                            $H_{loss}$：損失落差（摩擦損失、圧力損失など）<br><br>
+                            <strong>損失落差の要因：</strong><br>
+                            ・水圧管路の摩擦損失：管路内部の粗さ、曲がりによる損失<br>
+                            ・管路の腐食・サビ：内部が劣化すると摩擦が増大し、損失が増加<br>
+                            ・バルブ・継手の損失：バルブの開度、継手の形状による損失<br>
+                            ・水車の効率：水車の設計、摩耗による効率低下<br><br>
+                            <strong>損失落差の監視による予知保全：</strong><br>
+                            1mm精度の水位計測により、損失落差の変化をリアルタイムに検知できます。損失落差が増加する傾向があれば、管路の劣化や水車の摩耗が進行していることを示します。これにより、深刻な故障が発生する前に補修計画を立てる「予知保全」が可能になります。
+                        </p>
+                    </div>
+            
+            <div class="math-block">
+                Effective Head Equation:<br>
+                $H_{effective} = (H_{upper} - H_{lower}) - H_{loss}$
+            </div>
+                    
+                    <div class="card">
+                        <span class="card-title">予知保全による経営価値</span>
+                        <p class="card-detail">
+                            <strong>① 設備寿命の延長：</strong><br>
+                            早期に劣化を検知し、適切なメンテナンスを行うことで、設備の寿命を延長。例：管路の腐食を早期に検知し、塗装補修を行うことで、管路の寿命を10年延長。<br><br>
+                            <strong>② 計画的なメンテナンス：</strong><br>
+                            突発的な故障による計画外停止を回避し、計画的なメンテナンスを実施。例：発電停止による損失を最小化し、メンテナンスコストを削減。<br><br>
+                            <strong>③ 発電効率の維持：</strong><br>
+                            損失落差の増加を抑制し、発電効率を維持。例：1%の効率向上により、年間数百万円の収益向上。<br><br>
+                            <strong>④ リスク管理：</strong><br>
+                            重大事故のリスクを低減。例：管路の破損による大規模な水害を防止。<br><br>
+                            <strong>⑤ 投資判断の最適化：</strong><br>
+                            データに基づいた投資判断により、無駄な投資を削減。例：まだ健全な設備への過剰な投資を回避。
+                        </p>
+                    </div>
+                    
+                    <div class="note">
+                        <strong>水力発電における計測・監視・制御の統合価値：</strong><br>
+                        水位計測、流量計測、圧力計測、振動計測、電力計測などの多様な計測データを統合的に分析することで、水力発電システム全体の健全性を包括的に評価できます。これにより、単一の計測では検知できない複合的な問題（例：水位は正常だが、流量が減少している場合の管路劣化）も早期に検知可能になります。SoCとAI技術の進歩により、これらの複雑な分析を現場でリアルタイムに実行できるようになり、より高度な予知保全が実現されています。
+            </div>
+            
+            <p>1mm精度の計測により、水圧管内部の腐食やサビによる摩擦増大を、**「損失落差（$H_{loss}$）」の変化**としてリアルタイムに検知。深刻な故障が発生する前に補修計画を立てる「予知保全」を可能にし、水力発電の経営効率を最大化します。</p>
+        </div>
+    </details>
+        </section>
+    </main>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const closeBtn = document.getElementById('closeBtn');
+            const popupMenu = document.getElementById('popupMenu');
+            const overlay = document.getElementById('overlay');
+            const navLinks = popupMenu ? popupMenu.querySelectorAll('a') : [];
+
+            function openNav() {
+                if (!popupMenu || !overlay) return;
+                popupMenu.classList.add('open');
+                overlay.classList.add('active');
+                overlay.setAttribute('aria-hidden', 'false');
+                popupMenu.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                
+                // 全てのアコーディオンメニューを閉じる
+                const allDetails = popupMenu.querySelectorAll('details');
+                allDetails.forEach(detail => {
+                    detail.removeAttribute('open');
+                });
+                
+                // フォーカスを閉じるボタンに移動
+                if (closeBtn) {
+                    setTimeout(() => {
+                        closeBtn.focus();
+                    }, 100);
+                }
+            }
+
+            function closeNav() {
+                if (!popupMenu || !overlay) return;
+                popupMenu.classList.remove('open');
+                overlay.classList.remove('active');
+                overlay.setAttribute('aria-hidden', 'true');
+                popupMenu.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            // イベントリスナーの設定
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeNav);
+            }
+            if (overlay) {
+                overlay.addEventListener('click', closeNav);
+            }
+
+            // ナビゲーションリンククリック時にメニューを閉じる
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    // スムーズスクロール
+                    const targetId = link.getAttribute('href');
+                    if (targetId.startsWith('#')) {
+                        const targetElement = document.querySelector(targetId);
+                        if (targetElement) {
+                            setTimeout(() => {
+                                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 100);
+                        }
+                    }
+                    closeNav();
+                });
+            });
+
+            // ESCキーでメニューを閉じる
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && popupMenu.classList.contains('open')) {
+                    closeNav();
+                }
+            });
+
+            // フォーカストラップ（メニューが開いている間、フォーカスをメニュー内に閉じ込める）
+            const focusableElements = popupMenu.querySelectorAll('a, button');
+            const firstFocusable = focusableElements[0];
+            const lastFocusable = focusableElements[focusableElements.length - 1];
+
+            popupMenu.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstFocusable) {
+                            e.preventDefault();
+                            lastFocusable.focus();
+                        }
+                    } else {
+                        if (document.activeElement === lastFocusable) {
+                            e.preventDefault();
+                            firstFocusable.focus();
+                        }
+                    }
+                }
+            });
+        })();
+
+        // ティッカーのテキストをランダムに並び替え
+        (function() {
+            const tickerWrap = document.querySelector('.ticker-wrap');
+            if (tickerWrap) {
+                const tickerItems = Array.from(tickerWrap.querySelectorAll('.ticker-item'));
+                
+                // フィッシャー・イェーツのシャッフルアルゴリズム
+                for (let i = tickerItems.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [tickerItems[i], tickerItems[j]] = [tickerItems[j], tickerItems[i]];
+                }
+                
+                // シャッフルした順序で再配置
+                tickerItems.forEach(item => {
+                    tickerWrap.appendChild(item);
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
