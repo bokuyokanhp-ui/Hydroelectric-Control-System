@@ -431,6 +431,69 @@
                 transition-duration: 0.01ms !important;
             }
         }
+
+        /* 技術史年表リンクスタイル */
+        .timeline-link-container {
+            width: 100%;
+            margin: 30px 0;
+        }
+
+        .timeline-link-box {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--accent-blue);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-link-box:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .timeline-link {
+            display: block;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: color 0.3s ease;
+        }
+
+        .timeline-link:hover {
+            color: var(--primary-blue);
+        }
+
+        .timeline-link strong {
+            display: block;
+            font-size: 1.2em;
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .timeline-link:hover strong {
+            color: var(--accent-blue);
+        }
+
+        .timeline-link .link-url {
+            display: block;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            margin-top: 8px;
+        }
+
+        .timeline-description {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            line-height: 1.8;
+            color: var(--text-main);
+        }
+
     </style>
 </head>
 <body>
@@ -452,7 +515,15 @@
         </div>
         <div class="popup-content">
             <details>
-                <summary>1. 水力発電システムの概要</summary>
+                <summary>1. 技術史年表</summary>
+                <div class="menu-section-content">
+                    <a href="#timeline">セクション全体</a>
+                    <a href="#timeline-history">関連技術の歴史的変遷</a>
+                </div>
+            </details>
+            
+            <details>
+                <summary>2. 水力発電システムの概要</summary>
                 <div class="menu-section-content">
                     <a href="#overview">セクション全体</a>
                     <a href="#overview-importance">水力発電における計測・監視・制御の重要性</a>
@@ -460,7 +531,7 @@
             </details>
             
             <details>
-                <summary>2. 水位計測の歴史と技術的変遷</summary>
+                <summary>3. 水位計測の歴史と技術的変遷</summary>
                 <div class="menu-section-content">
                     <a href="#history">セクション全体</a>
                     <a href="#history-challenges">媒体の変化と現場が直面した技術的課題</a>
@@ -468,7 +539,7 @@
             </details>
             
             <details>
-                <summary>3. SoCの役割：計測器の統合頭脳</summary>
+                <summary>4. SoCの役割：計測器の統合頭脳</summary>
                 <div class="menu-section-content">
                     <a href="#soc-role">セクション全体</a>
                     <a href="#soc-role-necessity">なぜ「普通の計算機」ではなくSoCが必要なのか</a>
@@ -476,7 +547,7 @@
             </details>
             
             <details>
-                <summary>4. アーキテクチャ戦略：ARMとRISC-V</summary>
+                <summary>5. アーキテクチャ戦略：ARMとRISC-V</summary>
                 <div class="menu-section-content">
                     <a href="#cpu-arch">セクション全体</a>
                     <a href="#cpu-arch-strategy">コスト構造と将来の価格破壊に向けた選択肢</a>
@@ -484,7 +555,7 @@
             </details>
             
             <details>
-                <summary>5. 周波数の物理学：FMCWの深層</summary>
+                <summary>6. 周波数の物理学：FMCWの深層</summary>
                 <div class="menu-section-content">
                     <a href="#physics-deep">セクション全体</a>
                     <a href="#physics-deep-precision">なぜ「震え」が「1mmの精度」に化けるのか</a>
@@ -492,7 +563,7 @@
             </details>
             
             <details>
-                <summary>6. FFT（高速フーリエ変換）の数学的詳解</summary>
+                <summary>7. FFT（高速フーリエ変換）の数学的詳解</summary>
                 <div class="menu-section-content">
                     <a href="#fft-deep">セクション全体</a>
                     <a href="#fft-deep-magic">カオスな信号から「真実の水位」を分離する数学の魔法</a>
@@ -500,7 +571,7 @@
             </details>
             
             <details>
-                <summary>7. 次世代半導体Rapidusの衝撃</summary>
+                <summary>8. 次世代半導体Rapidusの衝撃</summary>
                 <div class="menu-section-content">
                     <a href="#rapidus">セクション全体</a>
                     <a href="#rapidus-future">2nm世代の国産チップが切り拓く自律判断の未来</a>
@@ -508,7 +579,7 @@
             </details>
             
             <details>
-                <summary>8. データダイエットと通信最適化</summary>
+                <summary>9. データダイエットと通信最適化</summary>
                 <div class="menu-section-content">
                     <a href="#lpwa-diet">セクション全体</a>
                     <a href="#lpwa-diet-necessity">なぜ「現場で解析」することが不可欠なのか</a>
@@ -516,7 +587,7 @@
             </details>
             
             <details>
-                <summary>9. 水力発電の監視システム</summary>
+                <summary>10. 水力発電の監視システム</summary>
                 <div class="menu-section-content">
                     <a href="#monitoring">セクション全体</a>
                     <a href="#monitoring-realtime">24時間365日の連続監視とリアルタイム制御</a>
@@ -524,7 +595,7 @@
             </details>
             
             <details>
-                <summary>10. 損失落差による予知保全と経営価値</summary>
+                <summary>11. 損失落差による予知保全と経営価値</summary>
                 <div class="menu-section-content">
                     <a href="#maintenance">セクション全体</a>
                     <a href="#maintenance-health">計測データが可視化する「水力発電設備の健康寿命」</a>
@@ -536,8 +607,29 @@
     <main>
         <h1>水力発電の計測・監視・制御の学習ノート</h1>
 
+        <section id="timeline">
+            <h2>1. 技術史年表</h2>
+            <details>
+                <summary id="timeline-history">関連技術の歴史的変遷</summary>
+                <div class="content">
+                    <p>水位計測技術の発展は、数学、物理学、半導体技術、通信技術など、様々な分野の進歩と密接に関連しています。以下の年表では、水位計測技術と関連する主要技術の歴史を時系列で示します。</p>
+                    
+                    <div class="timeline-link-container">
+                        <p>詳細な技術史年表は、以下のリンクからご覧いただけます：</p>
+                        <div class="timeline-link-box">
+                            <a href="https://bokuyokanhp-ui.github.io/history-of-hydropower-technology/" target="_blank" rel="noopener noreferrer" class="timeline-link">
+                                <strong>水力発電の計測・監視・制御の技術史年表</strong>
+                                <span class="link-url">https://bokuyokanhp-ui.github.io/history-of-hydropower-technology/</span>
+                            </a>
+                        </div>
+                        <p class="timeline-description">この年表では、量水標（定規）時代から現代の電波式（FMCW）水位計まで、水位計測技術の変遷を時系列で追跡できます。また、三角関数、微分・積分、フーリエ変換などの数学的基礎、CPU/マイクロプロセッサ、メモリ・ストレージ、SoCの進化など、関連技術の歴史も網羅しています。</p>
+                    </div>
+                </div>
+            </details>
+        </section>
+
         <section id="overview">
-            <h2>1. 水力発電システムの概要</h2>
+            <h2>2. 水力発電システムの概要</h2>
             <details>
                 <summary id="overview-importance">水力発電における計測・監視・制御の重要性</summary>
                 <div class="content">
@@ -597,7 +689,7 @@
         </section>
 
         <section id="history">
-            <h2>2. 水位計測の歴史と技術的変遷</h2>
+            <h2>3. 水位計測の歴史と技術的変遷</h2>
     <details>
         <summary id="history-challenges">媒体の変化と現場が直面した技術的課題</summary>
         <div class="content">
@@ -997,7 +1089,7 @@
         </section>
 
         <section id="soc-role">
-            <h2>3. SoC（System on Chip）の役割と具体的機能</h2>
+            <h2>4. SoC（System on Chip）の役割と具体的機能</h2>
     <details>
         <summary id="soc-role-necessity">なぜ「普通の計算機」ではなくSoCが必要なのか</summary>
         <div class="content">
@@ -2057,7 +2149,7 @@
         </section>
 
         <section id="cpu-arch">
-            <h2>4. CPUアーキテクチャ戦略：ARMとRISC-V</h2>
+            <h2>5. CPUアーキテクチャ戦略：ARMとRISC-V</h2>
     <details>
         <summary id="cpu-arch-strategy">コスト構造と将来の価格破壊に向けた選択肢</summary>
         <div class="content">
@@ -2180,7 +2272,7 @@
         </section>
 
         <section id="physics-deep">
-            <h2>5. 周波数の物理学：FMCWの深層理論</h2>
+            <h2>6. 周波数の物理学：FMCWの深層理論</h2>
     <details>
         <summary id="physics-deep-precision">なぜ「震え」が「1mmの精度」に化けるのか</summary>
         <div class="content">
@@ -2203,7 +2295,7 @@
         </section>
 
         <section id="fft-deep">
-            <h2>6. FFT（高速フーリエ変換）の詳細詳解</h2>
+            <h2>7. FFT（高速フーリエ変換）の詳細詳解</h2>
     <details>
         <summary id="fft-deep-magic">カオスな信号から「真実の水位」を分離する数学の魔法</summary>
         <div class="content">
@@ -2255,7 +2347,7 @@
         </section>
 
         <section id="rapidus">
-            <h2>7. 次世代半導体「ラピダス（Rapidus）」の衝撃</h2>
+            <h2>8. 次世代半導体「ラピダス（Rapidus）」の衝撃</h2>
     <details>
         <summary id="rapidus-future">2nm世代の国産チップが切り拓く自律判断の未来</summary>
         <div class="content">
@@ -2314,7 +2406,7 @@
         </section>
 
         <section id="lpwa-diet">
-            <h2>8. データダイエットとLPWA通信最適化</h2>
+            <h2>9. データダイエットとLPWA通信最適化</h2>
     <details>
         <summary id="lpwa-diet-necessity">なぜ「現場で解析」することが不可欠なのか</summary>
         <div class="content">
@@ -2350,7 +2442,7 @@
         </section>
 
         <section id="monitoring">
-            <h2>9. 水力発電の監視システム</h2>
+            <h2>10. 水力発電の監視システム</h2>
     <details>
                 <summary id="monitoring-realtime">24時間365日の連続監視とリアルタイム制御</summary>
         <div class="content">
@@ -2546,7 +2638,7 @@
         </section>
 
         <section id="maintenance">
-            <h2>10. 損失落差による予知保全と経営価値</h2>
+            <h2>11. 損失落差による予知保全と経営価値</h2>
             <details>
                 <summary id="maintenance-health">計測データが可視化する「水力発電設備の健康寿命」</summary>
                 <div class="content">
@@ -2602,6 +2694,8 @@
         </div>
     </details>
         </section>
+
+
     </main>
 
     <script>
@@ -2716,6 +2810,7 @@
                 });
             }
         })();
+
     </script>
 </body>
 </html>
